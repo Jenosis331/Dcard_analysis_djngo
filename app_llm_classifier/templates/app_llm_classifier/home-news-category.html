@@ -1,0 +1,160 @@
+{% extends 'base.html' %} {% block title %} 新聞分類 {% endblock %} 
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h1>新聞分類(CNA新聞5類)</h1>
+    <p>
+      '政治', '社會', '生活','國際','AI科技'
+    </p>
+  </div>
+</div>
+
+<div class="row">
+  <!-- row card -->
+  <div class="col-lg-6 mb-3">
+    <div class="card">
+      <div class="card-header">
+        <h4>新聞分類器</h4>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="example_selector" class="form-label">展示範例</label>
+          <select class="form-select mb-3" id="example_selector">
+            <option value="" selected>-- 請選擇範例 --</option>
+            <option value="positive1">
+              範例1：因應非常事變與戰時可能需要執行民防任務，內政部與國防部近期聯手修正「替代役役男服役期滿後召集服勤實施辦法」，不僅放寬召集年限與次數，並刪除過去每年召集不得超過60日的限制，未來替代役備役人力將可更有彈性地支援全民防衛需求。行政院於2022年12月核定「因應全民國防兵力結構調整之替代役配合方案」，決定將替代役納入民防系統，平時即可透過「演訓召集」進行訓練演習，待非常事變或戰時再進行「勤務召集」，全面配合國防體系動員。《自由時報》報導，官員指出，今年核定招募1萬3,650名替代役役男，下月將開放役男申請服一般替代役。目前替代役總備役人力約27萬7,000人，去年曾召訓5萬52人，今年原規劃召訓7萬2,000人，但因立法院刪減預算，規模下修至5萬人。即將於27日進行的演練，也將首次同時動員現役與備役替代役共同參與。依據最新修正內容，過去演訓召集限於退役8年內的備役役男，且每年召集次數不得超過1次，每次1日以內；但新規明定「必要時」內政部得「視需要」調整召集年限、次數與日數，明顯增加操作彈性。「必要時」包括全球氣候異常、國際局勢緊張、重大天然災害，或需支援軍事勤務等情形。新制也放寬召集對象，不再限於退伍8年內的役男，未來即使退伍已超過9年，只要曾接受民防專業訓練，亦可納入召集範圍。
+            </option>
+            <option value="positive2">
+              範例2：巴西知名律師兼網路紅人桑托斯（Jeferson Santos）近日一段疑似與男性的親密影片外洩後，引起網路廣泛討論。桑托斯擁有超過24萬名IG粉絲，將常在派對與足球賽場採訪女性，以調情親吻的短片而走紅，一直被認為是異性戀。如今桑托斯幫一名男人口愛的影片外流，他本人也正面回應。綜合外媒報導，面對影片外流與輿論抨擊，桑托斯在IG限時動態中回應「我不在乎。」他強調，私生活無需對任何人交代，且自己的專業背景與經濟獨立，「我是律師，也是影響者，生活無虞不靠別人。」這番話明確表達出他對外界的批評並不在乎，認為這些攻擊來自於「因他人快樂而心生怨恨的人」。桑托斯還說，針對影片外流，他將循法律途徑追究責任，並強調「我的回應會在法庭上。」表明不會在網路上與抨擊者纏鬥，而是訴諸法律手段。此外，桑托斯也呼籲粉絲們，不要給瘋子舞台，希望大家不要被負面能量影響。桑托斯認為，某些人因內心不快樂而喜歡干涉別人生活，「這些人一定過得很不幸福，不幸福到無法忍受別人的快樂，就像他們看不得我過得好一樣，但我真的很幸福，感謝上帝，我有一個美好的家庭、愛我的雙親，還有一群真正關心我的朋友，我身體也很健康。」桑托斯外型帥氣，以活潑的個性、有趣的採訪影片聞名，且擁有大量追隨者，尤其是巴西巴伊亞州的球迷，他經常在新水源體育場 （Arena Fonte Nova） 展示他對當地足球隊的支持。
+            </option>
+            <option value="positive3">
+              範例3：小版本怎麼選？GPT-4.1 mini延遲更低、速度更快，功能跟完整版幾乎一致。GPT-4.1 nano
+            </option>
+            <option value="negative1">
+              範例4：因為長下坡造成車禍頻傳的台中市沙鹿區向上路6段，27日上午10點多再度傳出至少5輛車追撞意外，警消出動5輛救護車前往，追撞波及範圍長達300公尺，也造成後方塞車數公里，至於傷勢人數及事發原因正在釐清中。
+            <option value="negative2">
+              範例5：出門大包小包，置物櫃又塞滿的時候怎麼辦？全家推出超狂的新服務「寄物+」，有網友日前在全家寄放行李，一天只要20元，最多可以寄放3天，常溫、冷藏都可以，便宜又方便，忍不住大讚超貼心。消息曝光，引起網友驚呼，「好扯喔，這個隱藏功能」、「全家就是我家」。有網友在IG發文，全家居然有提供寄放行李的服務，一天只要20元，最多可以放3天，常溫、冷藏、冷凍都可以寄放。貼文掀起熱論，「全家真的是一直在測試員工的服務極限值欸」、「剛好很需要欸，好讚」、「這服務也太佛了」、「有90%的人不知道吧」。全家首創原店寄取「寄物+」創新服務，具備「多溫層寄放、可代收貨款、彈性寄物天數」3大便利特色。寄件人只要透過全家FamiPort機台完成「填寫寄物資訊、填寫金流帳戶資料、填寫收件人資料」3步驟，將物品交給店舖櫃台人員，即完成寄物程序。除了全家有寄放行李的服務，7-11去年9月也有推出「同店寄取」服務，提供團購主、賣家、消費者，無論網購寄取件、面交、年節送禮遇到親友不在家等，皆可至ibon機台選擇「原店取件」服務，只需負擔運費成本，買家選擇就近自取，目前常溫寄取優惠價20元（限7日內領取）。
+            </option>
+            <option value="negative3">
+              範例6：美國總統川普近日接受《時代雜誌》（TIME）專訪時表示，他對輝達（Nvidia）執行長黃仁勳與台積電董事長魏哲家能夠兌現對美投資的承諾深具信心。在訪談中，川普（Donald Trump）強調，他所推行的關稅政策帶來明顯成效，並宣稱這一策略不僅為美國創造龐大財富，也促使製造產業重返本土。他說道「這是個重大的成功……我們正賺進了數十億美元。而且很關鍵的是，正因為對他們課徵高額關稅，這些公司終將回到美國，並選擇在這裡生產他們的商品。」川普以半導體領域為例，點名黃仁勳承諾的高達5000億美元投資計畫，並特別提到來自台灣的魏哲家。當《時代雜誌》記者問他「當這些企業家說要投入5000億時，你真的相信他們嗎？」川普回應「是的，我相信他們。首先，我認為他們本身就是可以信賴的人。但更關鍵的是，他們沒有其他選項。如果他們不做出這些投資，將沒能力付我們設定的關稅。」他也再次重申他的核心觀點「關稅為美國帶來了大量商機。請記得……只要你選擇在美國製造，就不會被課稅。
+            </option>
+            <option value="negative4">
+              範例7：一名政治立場親綠的女網友透過Line傳訊曾在民防課學到，戰爭時女生要帶保險套及避孕藥，避免被侵犯後不會生病或懷孕等，希望可以藉此說服對方加入大罷免的行列。此文引起大批網友討論、轉傳，而出處則是黑熊學院的「女性在戰災時，該如何思考避難對策？」文章。該名女網友在threads上傳與爸爸在1日深夜11時7分的對話，「我之前去上民防課，你知道他要我們女生帶什麼嗎？保險套跟事後避孕藥，以免戰爭時被侵犯不會生病或懷孕。如果不能用保險套就要吃事後藥，我連假也想回家跟你們去玩，但我很怕戰爭或併吞，我必須對抗一直刪國防預算的立委」，而女網友的爸爸直到1日深夜11時11分未讀訊息。該文於1日深夜11時19分PO出，至今累積37萬次觀看，按讚數達2.4萬、留言606則、轉發1024次，許多網友截圖分享該文並引起討論。黑熊學院表示，戰時要學習讓自己冷靜下來，深呼吸或冥想等，或尋找心理支持與可用資源，例如家人照片、玩偶、幸運物、幸運符，並與志同道合的人傾訴，保持心理健康，外出時務必結伴行動。黑熊學院提醒，此時要延伸思考「性暴力的可能性」，「我們應極力避免這樣的事情發生，然而仍需思考這方面的應對可能。當我們沒有任何退路，避孕藥或保險套，會是將傷害降低的方法之一」。
+            </option>
+            <option value="arguable1">
+              範例8：Meta本次共釋出三款模型輕量級的 Llama 4 Scout、進階版 Llama 4 Maverick，以及預覽中的超大型模型 Llama 4 Behemoth。其中，Llama 4 Scout 可在單顆 Nvidia H100 GPU 上運作，支援長達「1,000萬 tokens 」的上下文視窗，並在多項基準測試中擊敗Google的 Gemma 3及 Mistral 3.1，成為中小型應用的理想選擇。至於 Llama 4 Maverick，則鎖定高階推理與編碼任務，表現媲美 GPT-4o 與 DeepSeek-V3，且在活躍參數更少的情況下仍保持高效能表現。更令人矚目的是，Meta 預告中的Llama 4 Behemoth，總參數高達 2兆，活躍參數達2880億，在 STEM 領域基準測試中甚至超越 GPT-4.5與 Claude 3.7 Sonnet，為超大規模應用提供可能，不過，儘管 Llama 4被標榜為「開源模型」，Meta的授權條款仍限制擁有7億以上用戶的商業機構使用，這樣的限制也讓部分開源社群對Meta的「開源」定義產生質疑。更多關於 Llama 4的未來發展，預計將在4月29日的 LlamaCon 大會上揭曉。
+            </option>
+            <option value="arguable2">
+              範例9：緬甸28日發生芮氏規模8.2強烈地震，在台灣的泰語老師「泰國冰塊」在臉書發文透露許多網友好奇的KK園區狀況，直言「當地人也是受害者」。臉書粉專「泰國冰塊 Ice Laoshi」今早發文指出，緬甸發生芮氏規模8.2強震，「以往不管緬甸發生多少次災難，高冷的緬軍政府都不會求援，也不太願意讓國際進去援助，但這次軍政府有開口向國際求援了，是因為這次災情真的很嚴重！」文中同時表示「聽到緬甸大家也許會關心到KK園區，雖然該園區位於緬甸，但KK園區不是緬甸人蓋的，也許是軍政府或地方民族政府默許某國的詐騙集團過去搞這些園區，但緬甸人他們也長年反抗自己的軍政府，所以當地人也是受害者。而且曼谷唯一倒塌的那棟工地樓，工地區接近400名工人幾乎都是緬甸人，約80人在裡面，目前部分人已獲救，有些人死亡，傷亡人數還不明確。
+            </option>
+          </select>
+          <label for="textarea_content" class="form-label"
+            >輸入一段新聞文字...</label
+          >
+          <textarea
+            class="form-control"
+            id="textarea_content"
+            name="textarea_text"
+            rows="6"
+          >
+          </textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn_deep">
+          深度模型計算
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- column -->
+  <!-- Show sentiment score (probability) -->
+  <div class="col-lg-6 mb-3">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">判讀結果</h5>
+      </div>
+      <div class="card-body">
+        <!-- Show sentiment score (probability) -->
+        <ul id="show_sentiment_proba" class="list-group list-group-flush"></ul>
+      </div>
+    </div>
+  </div>
+  <!-- column -->
+</div>
+<!-- column -->
+{% endblock %} {% block extra_js %}
+<!-- Here are our javascript code -->
+<script>
+  // examples
+  $("#example_selector").on("change", function () {
+    const selectedValue = $(this).val();
+
+    if (selectedValue) {
+      // 從選擇的選項獲取文字內容
+      const selectedText = $("#example_selector option:selected").text();
+
+      // 提取冒號後的實際內容
+      const textParts = selectedText.split("：");
+      if (textParts.length > 1) {
+        // 設置文字區域的值為冒號後的內容
+        $("#textarea_content").val(textParts[1]);
+
+        // 立即進行分析
+        call_ajax();
+      }
+    }
+  });
+
+  //-- btn_deep on click event
+  $("#btn_deep").on("click", function (e) {
+    call_ajax();
+  });
+
+  //--ajax function for getting sentimental score
+  function call_ajax() {
+    const input_text = $("#textarea_content").val(); //取得輸入的文字
+    //console.log(input_text);
+    $("#show_sentiment_proba").empty(); //顯示區先要清空
+    $.ajax({
+      type: "POST",
+      // way #1: url path
+      url: "api_get_news_category/",
+      // way #2: call the internet API provided by others
+      // url: "http://163.18.23.20:8000/news_category/api_get_news_category/",
+
+      data: {
+        input_text: input_text,
+      },
+      success: function (received) {
+        //show sentiment score:
+
+        
+        // 根據信心度決定透明度或其他視覺效果
+        const confidencePercent = Math.round(received.confidence * 100);
+        const badgeClass = confidencePercent >= 50
+          ? "bg-danger"
+          : "bg-success";
+        
+        // 使用Bootstrap badges顯示結果
+        $("#show_sentiment_proba").append(
+          `<li class="list-group-item d-flex justify-content-between align-items-center">
+            分類: 
+            <span class="badge bg-info rounded-pill fs-6">${received.classification}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+            信心度: 
+            <span class="badge ${badgeClass} rounded-pill fs-6">${confidencePercent}%</span>
+            </li>`
+        );
+      },
+      error: function (xhr, status, error) {
+        // 新增錯誤處理
+        $("#show_sentiment_proba").append(
+          '<li class="list-group-item text-danger">發生錯誤: ' + error + "</li>"
+        );
+        console.error("AJAX Error: " + status + " - " + error);
+      },
+    }); //ajax
+  } //ajax function
+</script>
+{% endblock %}

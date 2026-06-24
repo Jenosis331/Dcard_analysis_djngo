@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import app_org_analysis.views; print\\('OK'\\)\")",
+      "PowerShell(Import-Csv *)",
+      "PowerShell(New-Item *)"
+    ]
+  }
+}

@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 留言情緒分析{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 60%, #8e24aa 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #6a1b9a; font-size: 1rem; }
+
+  .search-bar { gap: 0.5rem; }
+  .search-bar .form-control { font-size: 0.95rem; }
+
+  .article-card { margin-bottom: 1.25rem; }
+  .article-card .article-title {
+    font-size: 1.05rem; font-weight: 700; color: var(--text-primary);
+    margin: 0; line-height: 1.45;
+  }
+  .article-card .article-title a {
+    color: inherit; text-decoration: none;
+  }
+  .article-card .article-title a:hover { color: var(--brand-color); }
+  .article-card .article-meta {
+    font-size: 0.8rem; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; gap: 0.85rem;
+    margin-top: 0.35rem;
+  }
+  .article-card .article-meta i { margin-right: 0.25rem; }
+
+  /* 互動類型比例條 */
+  .inter-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.78rem; margin-bottom: 0.35rem;
+  }
+  .inter-row .inter-name {
+    width: 5.5rem; color: var(--text-secondary); flex-shrink: 0;
+  }
+  .inter-row .inter-bar {
+    flex: 1; height: 0.6rem; background: #eef0f7;
+    border-radius: 999px; overflow: hidden;
+  }
+  .inter-row .inter-bar > span {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, #ab47bc 0%, #7b1fa2 100%);
+    border-radius: 999px;
+  }
+  .inter-row .inter-pct {
+    width: 3.6rem; text-align: right;
+    color: var(--text-muted); font-variant-numeric: tabular-nums;
+  }
+
+  /* 熱門留言 */
+  .hot-comment {
+    background: #fafbff; border: 1px solid var(--border-color);
+    border-radius: 0.6rem; padding: 0.55rem 0.75rem; margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .hot-comment .hot-comment-head {
+    display: flex; justify-content: space-between;
+    font-size: 0.72rem; color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+  .hot-comment .hot-comment-text { color: var(--text-primary); line-height: 1.5; }
+
+  /* 全部留言下拉表格 */
+  .all-comments-table {
+    font-size: 0.83rem; margin-bottom: 0;
+  }
+  .all-comments-table th {
+    background: #f3eef7; color: var(--text-secondary);
+    font-weight: 600; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .all-comments-table td { vertical-align: top; }
+
+  /* 情緒徽章 */
+  .senti-badge { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 0.5rem; }
+  .senti-pos { background: rgba(46,125,50,0.12); color: #2e7d32; }
+  .senti-neg { background: rgba(198,40,40,0.12); color: #c62828; }
+  .senti-neu { background: rgba(120,120,120,0.12); color: #555; }
+
+  .inter-badge {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 0.5rem;
+    background: rgba(106,27,154,0.1); color: #6a1b9a;
+  }
+
+  /* 情緒圓餅圖容器 */
+  .senti-pie-wrap {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .senti-pie-wrap canvas { max-height: 160px; }
+  .senti-pie-legend {
+    list-style: none; padding: 0; margin: 0.5rem 0 0;
+    font-size: 0.74rem;
+    display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center;
+  }
+  .senti-pie-legend li {
+    padding: 0.15rem 0.5rem; border-radius: 0.5rem;
+  }
+
+  /* 空結果 */
+  .empty-block {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+  .empty-block i { font-size: 2.5rem; color: #c5cae9; }
+
+  /* 分頁 */
+  .pagination .page-link {
+    color: var(--brand-color); border-color: var(--border-color);
+  }
+  .pagination .page-item.active .page-link {
+    background: var(--brand-gradient); border: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-chat-heart-fill"></i></div>
+  <div>
+    <h1>留言情緒分析</h1>
+    <p>瀏覽 Dcard 文章資訊、熱門留言、AI 情緒判讀，並以圖表呈現留言情緒分布</p>
+  </div>
+</div>
+
+<!-- ── Search bar ── -->
+<form method="get" action="" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="d-flex search-bar align-items-center">
+      <i class="bi bi-search text-muted ms-1"></i>
+      <input type="text" name="q" value="{{ keyword }}" class="form-control"
+             placeholder="輸入標題、關鍵字或內文進行檢索…" />
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-funnel me-1"></i>檢索
+      </button>
+      {% if keyword %}
+      <a href="?" class="btn btn-outline-secondary">
+        <i class="bi bi-x-circle me-1"></i>清除
+      </a>
+      {% endif %}
+    </div>
+    <div class="form-text mt-2">
+      共 <strong>{{ total_articles }}</strong> 篇文章
+      {% if keyword %}符合關鍵字「{{ keyword }}」{% endif %}
+      ，每頁顯示 10 篇
+    </div>
+  </div>
+</form>
+
+{% if blocks %}
+  {% for art in blocks %}
+  <!-- ── 一篇文章一個區塊 ── -->
+  <div class="card article-card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <span class="badge bg-secondary me-2">{{ art.category }}</span>
+        <span class="card-hdr d-inline-flex"><i class="bi bi-file-text"></i>文章 #{{ art.article_id }}</span>
+      </div>
+      <span class="text-muted small">
+        <i class="bi bi-chat-left-dots me-1"></i>{{ art.num_comments }} 則留言
+      </span>
+    </div>
+
+    <div class="card-body">
+      <!-- 標題 + Meta -->
+      <h2 class="article-title">
+        <a href="{{ art.links }}" target="_blank" rel="noopener">
+          {{ art.title }} <i class="bi bi-box-arrow-up-right small"></i>
+        </a>
+      </h2>
+      <div class="article-meta">
+        <span><i class="bi bi-calendar-event"></i>{{ art.article_dates }}</span>
+        <span><i class="bi bi-chat-dots"></i>{{ art.num_comments }} 留言</span>
+        <span><i class="bi bi-link-45deg"></i>
+          <a href="{{ art.links }}" target="_blank" rel="noopener" class="text-decoration-none">原文連結</a>
+        </span>
+      </div>
+
+      <hr />
+
+      <div class="row g-3">
+        <!-- 留言情緒圓餅圖 -->
+        <div class="col-md-4">
+          <div class="card-hdr mb-2"><i class="bi bi-pie-chart-fill"></i>留言情緒分布</div>
+          <div class="senti-pie-wrap">
+            {% if art.num_comments > 0 %}
+              <canvas class="senti-pie"
+                      data-pos="{{ art.senti_count.正面留言 }}"
+                      data-neg="{{ art.senti_count.負面留言 }}"
+                      data-neu="{{ art.senti_count.中立留言 }}"></canvas>
+              <ul class="senti-pie-legend">
+                <li class="senti-pos">正面 {{ art.senti_count.正面留言 }} ({{ art.senti_percent.正面留言 }}%)</li>
+                <li class="senti-neg">負面 {{ art.senti_count.負面留言 }} ({{ art.senti_percent.負面留言 }}%)</li>
+                <li class="senti-neu">中立 {{ art.senti_count.中立留言 }} ({{ art.senti_percent.中立留言 }}%)</li>
+              </ul>
+            {% else %}
+              <div class="text-muted small py-4">此文章尚無留言</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 留言互動類型比例 -->
+        <div class="col-md-4">
+          <div class="card-hdr mb-2"><i class="bi bi-tags-fill"></i>留言互動類型</div>
+          {% if art.inter_ratio %}
+            {% for it in art.inter_ratio %}
+            <div class="inter-row">
+              <div class="inter-name">{{ it.name }}</div>
+              <div class="inter-bar"><span style="width: {{ it.percent }}%"></span></div>
+              <div class="inter-pct">{{ it.count }} ({{ it.percent }}%)</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted small py-4">此文章尚無留言可分類</div>
+          {% endif %}
+        </div>
+
+        <!-- 熱門留言 (按讚數 Top 3) -->
+        <div class="col-md-4">
+          <div class="card-hdr mb-2"><i class="bi bi-fire"></i>熱門留言 Top 3</div>
+          {% if art.top_comments %}
+            {% for c in art.top_comments %}
+            <div class="hot-comment">
+              <div class="hot-comment-head">
+                <span><i class="bi bi-arrow-up-square me-1"></i>{{ c.floor }} · <i class="bi bi-heart-fill text-danger"></i> {{ c.likes }}</span>
+                <span>
+                  {% if c.sentiment_type == '正面留言' %}
+                    <span class="senti-badge senti-pos">{{ c.sentiment_type }}</span>
+                  {% elif c.sentiment_type == '負面留言' %}
+                    <span class="senti-badge senti-neg">{{ c.sentiment_type }}</span>
+                  {% else %}
+                    <span class="senti-badge senti-neu">{{ c.sentiment_type }}</span>
+                  {% endif %}
+                </span>
+              </div>
+              <div class="hot-comment-text">{{ c.text|truncatechars:120 }}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted small py-4">此文章尚無熱門留言</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 檢視所有留言 下拉 -->
+      {% if art.all_comments %}
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="collapse"
+                data-bs-target="#all-cmts-{{ art.article_id }}"
+                aria-expanded="false">
+          <i class="bi bi-chevron-down me-1"></i>
+          檢視所有留言 ({{ art.num_comments }})
+        </button>
+        <div class="collapse mt-2" id="all-cmts-{{ art.article_id }}">
+          <div class="table-responsive">
+            <table class="table table-sm all-comments-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 4rem;">樓層</th>
+                  <th style="width: 9rem;">時間</th>
+                  <th style="width: 5rem;">按讚</th>
+                  <th style="width: 7rem;">互動類型</th>
+                  <th style="width: 7rem;">情緒</th>
+                  <th>留言內容</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in art.all_comments %}
+                <tr>
+                  <td>{{ c.floor }}</td>
+                  <td class="text-muted">{{ c.time }}</td>
+                  <td><i class="bi bi-heart-fill text-danger"></i> {{ c.likes }}</td>
+                  <td><span class="inter-badge">{{ c.interaction_type }}</span></td>
+                  <td>
+                    {% if c.sentiment_type == '正面留言' %}
+                      <span class="senti-badge senti-pos">{{ c.sentiment_type }}</span>
+                    {% elif c.sentiment_type == '負面留言' %}
+                      <span class="senti-badge senti-neg">{{ c.sentiment_type }}</span>
+                    {% else %}
+                      <span class="senti-badge senti-neu">{{ c.sentiment_type }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ c.text }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- ── 分頁 ── -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="article pages" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?q={{ keyword }}&page=1"><i class="bi bi-chevron-double-left"></i></a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?q={{ keyword }}&page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+        </li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?q={{ keyword }}&page={{ num }}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?q={{ keyword }}&page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?q={{ keyword }}&page={{ page_obj.paginator.num_pages }}"><i class="bi bi-chevron-double-right"></i></a>
+        </li>
+      {% endif %}
+    </ul>
+    <div class="text-center text-muted small">
+      第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 頁
+    </div>
+  </nav>
+  {% endif %}
+
+{% else %}
+  <div class="empty-block">
+    <i class="bi bi-emoji-frown"></i>
+    <p class="mt-2 mb-0">查無符合「{{ keyword }}」的文章，請嘗試其他關鍵字</p>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script>
+  // 對頁面上每個 .senti-pie canvas 渲染情緒圓餅圖
+  document.querySelectorAll('canvas.senti-pie').forEach(function (cv) {
+    var pos = parseInt(cv.dataset.pos || '0', 10);
+    var neg = parseInt(cv.dataset.neg || '0', 10);
+    var neu = parseInt(cv.dataset.neu || '0', 10);
+    if (pos + neg + neu === 0) return;
+    new Chart(cv.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['正面', '負面', '中立'],
+        datasets: [{
+          data: [pos, neg, neu],
+          backgroundColor: [
+            'rgba(46,125,50,0.75)',
+            'rgba(198,40,40,0.75)',
+            'rgba(120,120,120,0.55)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        legend: { display: false },
+        cutoutPercentage: 55,
+        tooltips: {
+          callbacks: {
+            label: function (item, data) {
+              var v = data.datasets[0].data[item.index];
+              var total = data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
+              var pct = total ? Math.round(v / total * 100) : 0;
+              return data.labels[item.index] + ': ' + v + ' (' + pct + '%)';
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

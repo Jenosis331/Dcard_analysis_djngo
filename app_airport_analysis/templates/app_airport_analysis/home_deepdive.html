@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ active_theme }}輿情觀測 — 關鍵字深挖{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: var(--brand-gradient);
+    border-radius: var(--radius-card);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1.2rem;
+  }
+  .hero-icon {
+    width: 54px; height: 54px; flex-shrink: 0;
+    background: rgba(255,255,255,0.18); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: #fff;
+  }
+  .page-hero h1 { font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.75); margin: 0.2rem 0 0; font-size: 0.82rem; }
+  .hero-badge {
+    margin-left: auto; background: rgba(255,255,255,0.14);
+    color: #fff; border-radius: 2rem; padding: 0.28rem 0.85rem;
+    font-size: 0.73rem; white-space: nowrap;
+  }
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: var(--brand-color); font-size: 0.95rem; }
+  .metric-row { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .metric-card {
+    flex: 1; min-width: 100px;
+    background: var(--bg-card-header); border: 1px solid var(--border-color);
+    border-radius: var(--radius-card); padding: 0.7rem 0.9rem; text-align: center;
+  }
+  .metric-card .m-val { font-size: 1.45rem; font-weight: 800; color: var(--brand-color); line-height: 1.2; }
+  .metric-card .m-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.5rem 0; min-height: 110px; align-items: center; }
+  .kw-tag {
+    display: inline-flex; align-items: center;
+    padding: 0.22em 0.6em; border-radius: 999px;
+    background: #e8eaf6; color: var(--brand-dark);
+    font-weight: 600; cursor: default; line-height: 1.3;
+    transition: transform 0.14s, background 0.14s;
+  }
+  .kw-tag:hover { transform: scale(1.08); background: #c5cae9; }
+  .placeholder-hint {
+    display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 0; color: var(--text-muted); gap: 0.5rem; font-size: 0.86rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-search"></i></div>
+  <div>
+    <h1>關鍵字深挖</h1>
+    <p>選擇情境，深度分析熱門關鍵字與詞頻分佈</p>
+  </div>
+  <div class="hero-badge d-none d-md-block">
+    <i class="bi bi-database-fill me-1"></i>資料來源：Dcard {{ active_theme }}相關討論
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-3">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-signpost-split-fill"></i>選擇情境</span>
+      </div>
+      <div class="card-body d-flex flex-column gap-2">
+        <select id="dd-select" class="form-select">
+          {% for sc in scenario_list %}
+          <option value="{{ sc }}">{{ sc }}</option>
+          {% endfor %}
+        </select>
+        <button id="dd-btn" class="btn btn-primary">
+          <i class="bi bi-search me-1"></i>分析
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-9">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-speedometer2"></i>情境概覽</span>
+      </div>
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="m-val" id="m-scenario">—</div>
+            <div class="m-lbl">分析情境</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-val" id="m-mentions">—</div>
+            <div class="m-lbl">相關文章數</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-val" id="m-kwcount">—</div>
+            <div class="m-lbl">關鍵字種類</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-val" id="m-top1">—</div>
+            <div class="m-lbl">最熱關鍵字</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-cloud-fill"></i>關鍵字標籤雲</span>
+      </div>
+      <div class="card-body">
+        <div class="tag-cloud" id="dd-tagcloud">
+          <div class="placeholder-hint">
+            <i class="bi bi-cursor-fill"></i>請先點擊「分析」
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-bar-chart-fill"></i>熱門關鍵字 Top 15</span>
+      </div>
+      <div class="card-body">
+        <canvas id="chart-dd-bar" style="max-height:340px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// ==========================================
+// 1. 全域變數與輔助函式設定
+// ==========================================
+
+// 定義 10 種主題顏色 (用於長條圖)
+const PALETTE = [
+  '#3949ab','#e53935','#43a047','#fb8c00','#8e24aa',
+  '#00acc1','#6d4c41','#1e88e5','#f4511e','#39796b',
+];
+
+// 將 HEX 16進位色碼轉換為 RGBA 格式
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// 定義文字雲專用的靛藍色漸層色階 (由淺到深，共 8 階)
+const INDIGO = ['#e8eaf6','#c5cae9','#9fa8da','#7986cb','#5c6bc0','#3949ab','#283593','#1a237e'];
+
+// --- 文字雲的 3 個核心動態計算函式 ---
+// 根據關鍵字頻率 (f) 在最小值 (lo) 與最大值 (hi) 之間的比例：
+
+// 1. 計算字體大小：最低頻率為 0.75em，最高頻率為 2.25em (0.75 + 1.5)
+function tagSize(f, lo, hi) { return hi===lo ? 1.0 : +(0.75+((f-lo)/(hi-lo))*1.5).toFixed(2); }
+
+// 2. 計算背景顏色：將頻率映射到 INDIGO 陣列的 0~7 索引值，頻率越高顏色越深
+function tagBg(f, lo, hi)   { const i = hi===lo?1:Math.round(((f-lo)/(hi-lo))*(INDIGO.length-1)); return INDIGO[i]; }
+
+// 3. 計算文字顏色：當背景色夠深 (比例大於 0.5) 時用白色文字，否則用深藍色文字，確保高對比易讀性
+function tagFg(f, lo, hi)   { return ((f-lo)/(hi-lo||1))>0.5 ? '#fff' : '#1a237e'; }
+
+// 用來儲存長條圖的實例，方便每次切換資料時能先銷毀舊圖再畫新圖
+let ddBarChart = null;
+
+
+// ==========================================
+// 2. 事件監聽與資料抓取
+// ==========================================
+
+// 綁定點擊按鈕或下拉選單改變時，觸發 fetchDeepDive 函式
+document.getElementById('dd-btn').addEventListener('click', fetchDeepDive);
+document.getElementById('dd-select').addEventListener('change', fetchDeepDive);
+
+// 網頁載入後，立刻執行一次以顯示初始預設資料
+fetchDeepDive();
+
+// 向後端請求特定情境 (Scenario) 的關鍵字深度探索資料
+function fetchDeepDive() {
+  const sc = document.getElementById('dd-select').value; // 取得使用者選擇的情境
+  // const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+  fetch('/airport/api/', {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/x-www-form-urlencoded',
+      // 'X-CSRFToken': csrfToken // 若有 403 Forbidden 錯誤，請取消這行註解
+    },
+    // 將請求模式設為 deepdive，並帶上 url-encoded 的情境名稱
+    body: `mode=deepdive&scenario=${encodeURIComponent(sc)}`
+  })
+  .then(r => r.json())
+  .then(renderDeepDive); // 收到資料後交給 renderDeepDive 渲染畫面
+}
+
+
+// ==========================================
+// 3. 渲染畫面 (數據指標、文字雲、長條圖)
+// ==========================================
+function renderDeepDive(res) {
+  const kws   = res.keywords; // 後端傳來的關鍵字陣列 [{keyword: '護照', keyword_freq: 120}, ...]
+  const freqs = kws.map(k => k.keyword_freq); // 提取出所有頻率數字
+  
+  // 找出頻率的最小值與最大值，供文字雲動態計算使用
+  const lo = Math.min(...freqs), hi = Math.max(...freqs);
+  
+  // 截取出現頻率最高的 15 個關鍵字，準備畫長條圖用
+  const top15 = kws.slice(0, 15);
+
+  // --- 更新上方的數據統計卡片 ---
+  document.getElementById('m-scenario').textContent = res.scenario; // 當前情境名稱
+  document.getElementById('m-mentions').textContent = res.mentions; // 總提及次數
+  document.getElementById('m-kwcount').textContent  = kws.length;   // 不重複的關鍵字數量
+  document.getElementById('m-top1').textContent     = kws[0] ? kws[0].keyword : '—'; // 榜首關鍵字
+
+  // --- 繪製文字雲 ---
+  const cloud = document.getElementById('dd-tagcloud');
+  cloud.innerHTML = ''; // 清空舊的文字雲內容
+  kws.forEach(kw => {
+    const tag = document.createElement('span');
+    tag.className = 'kw-tag';
+    // 動態套用前面定義的字體大小、背景色、文字顏色
+    tag.style.cssText = `font-size:${tagSize(kw.keyword_freq,lo,hi)}em;` +
+      `background:${tagBg(kw.keyword_freq,lo,hi)};` +
+      `color:${tagFg(kw.keyword_freq,lo,hi)};`;
+    
+    // 滑鼠懸浮時會顯示完整的字詞與次數提示
+    tag.title = `${kw.keyword}：出現 ${kw.keyword_freq} 次`;
+    tag.textContent = kw.keyword;
+    
+    cloud.appendChild(tag); // 將標籤塞進文字雲容器中
+  });
+
+  // --- 繪製 Top 15 關鍵字長條圖 ---
+  // 如果之前已經有畫過圖了，必須先呼叫 destroy() 銷毀它，否則新舊圖會重疊閃爍
+  if (ddBarChart) { ddBarChart.destroy(); }
+  
+  ddBarChart = new Chart(document.getElementById('chart-dd-bar').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: top15.map(k => k.keyword), // Y軸：關鍵字名稱
+      datasets: [{
+        label: '出現頻率',
+        data: top15.map(k => k.keyword_freq), // X軸：出現次數
+        // 【修正】原本的 PALETTE.slice 無法應付 top15 (15 > 10種顏色)，改用 map 配合 i % PALETTE.length 循環取色
+        backgroundColor: top15.map((_, i) => hexToRgba(PALETTE[i % PALETTE.length], 0.8)),
+        borderColor: top15.map((_, i) => PALETTE[i % PALETTE.length]),
+        borderWidth: 1.5, 
+        borderRadius: 4, // 長條圖微圓角
+      }]
+    },
+    options: {
+      indexAxis: 'y', // 將 X/Y 軸對調，變成水平長條圖
+      responsive: true,
+      plugins: {
+        legend: {display:false}, // 隱藏圖例
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.x} 次` } // 自訂 Tooltip 顯示格式
+        }
+      },
+      scales: {
+        x: {beginAtZero:true, grid:{color:'#e8eaf6'}}, // X 軸格線顏色設定
+        y: {grid:{display:false}, ticks:{font:{size:12}}} // Y 軸隱藏格線，字體設為 12px
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

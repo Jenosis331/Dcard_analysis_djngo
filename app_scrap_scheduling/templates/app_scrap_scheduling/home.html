@@ -1,0 +1,588 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #b71c1c 0%, #c62828 60%, #d32f2f 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #c62828; font-size: 1rem; }
+
+  .sov-stat {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sov-stat:last-child { border-bottom: none; }
+  .sov-stat .stat-icon {
+    width: 2.25rem; height: 2.25rem;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .sov-stat .stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+  .sov-stat .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block title %}排程與任務管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="h3 mb-0">⚙️ 排程與任務管理</h2>
+            <p class="text-muted">管理系統自動化任務與排程設定</p>
+        </div>
+    </div>
+
+    <!-- 排程狀態卡片 -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fs-6 fw-bold text-secondary">📋 系統排程狀態</h5>
+            <span id="schedulerStatusBadge" class="badge bg-secondary">狀態讀取中...</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 border-end-md mb-3 mb-md-0">
+                    <h6 class="fw-bold fs-6 text-dark mb-2">自動排程控制</h6>
+                    <p class="small text-muted mb-3">排程：每小時執行 Dcard 爬蟲、每天凌晨 2:00 執行情緒分析。</p>
+                    <button id="btnStartScheduler" class="btn btn-sm btn-outline-success me-2">啟動自動排程</button>
+                    <button id="btnStopScheduler" class="btn btn-sm btn-outline-danger">停止自動排程</button>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold fs-6 text-dark mb-2">手動任務執行</h6>
+                    <p class="small text-muted mb-3">立即在背景觸發單次任務，不影響既有排程。</p>
+                    <button id="btnRunScraper" class="btn btn-sm btn-primary me-2">執行 Dcard 爬蟲</button>
+                    {% comment %}<button id="btnRunAnalyzer" class="btn btn-sm btn-info text-white">分析情緒</button>{% endcomment %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 爬蟲關鍵字與模式設定卡片 -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fs-6 fw-bold text-secondary">⚙️ 爬蟲模式與關鍵字設定</h5>
+        </div>
+        <div class="card-body">
+            <!-- 爬蟲運作模式 -->
+            <div class="mb-3 pb-3 border-bottom">
+                <label class="form-label small fw-bold text-dark d-block">爬蟲運作模式</label>
+                <div class="d-flex flex-column flex-md-row gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="crawlerMode" id="modeCategory" value="category" checked>
+                        <label class="form-check-label small" for="modeCategory">
+                            📋 <strong>看板爬取模式</strong> (get_dcard_by_category.py) — 爬取特定看板之文章
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="crawlerMode" id="modeKeyword" value="keyword">
+                        <label class="form-check-label small" for="modeKeyword">
+                            🔍 <strong>關鍵字搜尋模式</strong> (get_dcard_by_keyword.py) — 全站搜尋關鍵字文章
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 關鍵字輸入 -->
+            <div class="mb-3">
+                <label for="inputKeywords" id="labelKeywords" class="form-label small fw-bold text-dark">自訂爬取看板名稱</label>
+                <div class="input-group">
+                    <input type="text" id="inputKeywords" class="form-control form-control-sm" placeholder="例如: tech_job, job, talk (以英文或中文逗號分隔)">
+                    <button id="btnSaveKeywords" class="btn btn-sm btn-success">更新關鍵字</button>
+                </div>
+                <div class="form-text small text-muted mt-2">
+                    目前設定之 <span id="currentModeLabel" class="fw-bold">看板名稱</span>：
+                    <span id="currentKeywordsBadgeList" class="ms-1">
+                        <!-- 動態生成關鍵字 badge -->
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 排程任務列表 -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fs-6 fw-bold text-secondary">⏰ 排程任務列表</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>任務名稱</th>
+                            <th>任務描述</th>
+                            <th>排程規則</th>
+                            <th>狀態</th>
+                            <th>最後執行時間</th>
+                            <th>下次執行時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedulerTableBody">
+                        <!-- 任務列表將在此處動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 檔案下載列表卡片 -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fs-6 fw-bold text-secondary">📂 已爬取資料檔案下載</h5>
+            <div>
+                <button id="btnRefreshFiles" class="btn btn-sm btn-outline-primary">🔄 重新整理清單</button>
+                <button id="btnDeleteAllFiles" class="btn btn-sm btn-outline-danger ms-2">🗑️ 全部丟棄</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- 模式切換 Tabs -->
+            <ul class="nav nav-tabs mb-3" id="fileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active small fw-bold" id="category-tab" data-bs-toggle="tab" data-bs-target="#category-pane" type="button" role="tab" aria-controls="category-pane" aria-selected="true">📋 看板爬取資料</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link small fw-bold" id="keyword-tab" data-bs-toggle="tab" data-bs-target="#keyword-pane" type="button" role="tab" aria-controls="keyword-pane" aria-selected="false">🔍 關鍵字搜尋資料</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="fileTabsContent">
+                <!-- 看板爬取資料面板 -->
+                <div class="tab-pane fade show active" id="category-pane" role="tabpanel" aria-labelledby="category-tab">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>檔案名稱</th>
+                                    <th>資料類型</th>
+                                    <th>檔案大小</th>
+                                    <th>最後修改時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoryFileTableBody">
+                                <!-- 看板爬取的檔案清單將在此處動態生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 關鍵字搜尋資料面板 -->
+                <div class="tab-pane fade" id="keyword-pane" role="tabpanel" aria-labelledby="keyword-tab">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>檔案名稱</th>
+                                    <th>資料類型</th>
+                                    <th>檔案大小</th>
+                                    <th>最後修改時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keywordFileTableBody">
+                                <!-- 關鍵字搜尋的檔案清單將在此處動態生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 執行歷史記錄 -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fs-6 fw-bold text-secondary">📋 最近執行紀錄</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>任務名稱</th>
+                            <th>開始時間</th>
+                            <th>結束時間</th>
+                            <th>執行狀態</th>
+                            <th>耗時</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- 历史记录将在此处动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 加載模態框（用於詳細信息） -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1" aria-labelledby="taskDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="taskDetailModalLabel">任務詳細資訊</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="taskDetailContent">
+          <!-- 任務詳細內容將在此處動態生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // 初始化頁面
+        fetchSchedulerStatus();
+        loadSchedulerTasks();
+        loadExecutionHistory();
+        fetchKeywords();
+        fetchCrawlerMode();
+        fetchFileList();
+
+        // 綁定模式切換事件
+        $("input[name='crawlerMode']").change(function() {
+            const mode = $(this).val();
+            updateCrawlerModeOnServer(mode);
+            updateUILabels(mode);
+        });
+
+        // 綁定重新整理檔案按鈕
+        $("#btnRefreshFiles").click(function() {
+            fetchFileList();
+        });
+
+        // 綁定全部丟棄按鈕
+        $("#btnDeleteAllFiles").click(function() {
+            if (confirm("確定要丟棄所有已爬取的資料檔案嗎？\n此動作將會永久刪除所有文章與留言 CSV 檔案，且無法復原！")) {
+                const btn = $(this);
+                btn.prop('disabled', true).text('刪除中...');
+                $.post('{% url 'app_scrap_scheduling:api_delete_all_files' %}', function(res) {
+                    alert(res.message);
+                    btn.prop('disabled', false).text('🗑️ 全部丟棄');
+                    fetchFileList(); // 重新整理檔案清單
+                }).fail(function(xhr) {
+                    const err = xhr.responseJSON ? xhr.responseJSON.message : "全部刪除失敗";
+                    alert(err);
+                    btn.prop('disabled', false).text('🗑️ 全部丟棄');
+                });
+            }
+        });
+
+        // 綁定按鈕事件
+        $("#btnSaveKeywords").click(function() {
+            const btn = $(this);
+            const kws = $("#inputKeywords").val().trim();
+            if (!kws) {
+                alert("關鍵字不能為空");
+                return;
+            }
+            btn.prop('disabled', true).text('儲存中...');
+            $.post('{% url 'app_scrap_scheduling:api_keywords' %}', { keywords: kws }, function(res) {
+                alert(res.message);
+                btn.prop('disabled', false).text('更新關鍵字');
+                renderKeywords(res.keywords);
+            }).fail(function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.message : "更新失敗";
+                alert(err);
+                btn.prop('disabled', false).text('更新關鍵字');
+            });
+        });
+        $("#btnStartScheduler").click(function() {
+            $.post('{% url 'app_scrap_scheduling:api_scheduler_start' %}', function(res) {
+                alert(res.message);
+                fetchSchedulerStatus();
+                loadSchedulerTasks();
+            });
+        });
+
+        $("#btnStopScheduler").click(function() {
+            $.post('{% url 'app_scrap_scheduling:api_scheduler_stop' %}', function(res) {
+                alert(res.message);
+                fetchSchedulerStatus();
+                loadSchedulerTasks();
+            });
+        });
+
+        $("#btnRunScraper").click(function() {
+            const btn = $(this);
+            btn.prop('disabled', true).text('觸發中...');
+            $.post('{% url 'app_scrap_scheduling:api_run_task' %}', { task: "scraper" }, function(res) {
+                alert(res.message);
+                btn.prop('disabled', false).text('執行 Dcard 爬蟲');
+                loadExecutionHistory(); // 更新歷史紀錄
+            }).fail(function() {
+                alert('觸發失敗');
+                btn.prop('disabled', false).text('執行爬蟲');
+            });
+        });
+
+        /*
+        $("#btnRunAnalyzer").click(function() {
+            const btn = $(this);
+            btn.prop('disabled', true).text('觸發中...');
+            $.post('{% url 'app_scrap_scheduling:api_run_task' %}', { task: "analyzer" }, function(res) {
+                alert(res.message);
+                btn.prop('disabled', false).text('分析情緒');
+                loadExecutionHistory(); // 更新歷史紀錄
+            }).fail(function() {
+                alert('觸發失敗');
+                btn.prop('disabled', false).text('分析情緒');
+            });
+        });
+        */
+    });
+
+    // 取得排程狀態
+    function fetchSchedulerStatus() {
+        $.get('{% url 'app_scrap_scheduling:api_scheduler_status' %}', function(data) {
+            const badge = $("#schedulerStatusBadge");
+            if (data.scheduled) {
+                badge.removeClass("bg-secondary bg-danger").addClass("bg-success").text("排程執行中");
+            } else {
+                badge.removeClass("bg-secondary bg-success").addClass("bg-danger").text("排程已停用");
+            }
+        }).fail(function() {
+            $("#schedulerStatusBadge").removeClass("bg-success bg-danger").addClass("bg-secondary").text("狀態取得失敗");
+        });
+    }
+
+    // 載入排程任務列表
+    function loadSchedulerTasks() {
+        $.get('{% url 'app_scrap_scheduling:api_scheduler_status' %}', function(data) {
+            const tbody = $("#schedulerTableBody");
+            tbody.empty();
+            
+            if (data.jobs && data.jobs.length > 0) {
+                data.jobs.forEach(function(job) {
+                    const row = `
+                        <tr>
+                            <td>${job.name}</td>
+                            <td>${job.description}</td>
+                            <td>${job.schedule}</td>
+                            <td><span class="badge ${job.status === 'running' ? 'bg-success' : 'bg-secondary'}">${job.status}</span></td>
+                            <td>${job.last_run || '尚未執行'}</td>
+                            <td>${job.next_run || '尚未排程'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="showTaskDetail('${job.name}')">詳細</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr><td colspan="7" class="text-center">暫無排程任務</td></tr>');
+            }
+        }).fail(function() {
+            $("#schedulerTableBody").empty().append('<tr><td colspan="7" class="text-center text-danger">載入失敗</td></tr>');
+        });
+    }
+
+    // 載入執行歷史
+    function loadExecutionHistory() {
+        $.get('{% url 'app_scrap_scheduling:api_scheduler_history' %}', function(data) {
+            const tbody = $("#historyTableBody");
+            tbody.empty();
+            
+            if (data.history && data.history.length > 0) {
+                data.history.forEach(function(record) {
+                    let badgeClass = 'bg-secondary';
+                    let statusText = record.status;
+                    if (record.status === 'success') {
+                        badgeClass = 'bg-success';
+                        statusText = '成功';
+                    } else if (record.status === 'failed') {
+                        badgeClass = 'bg-danger';
+                        statusText = '失敗';
+                    } else if (record.status === 'running') {
+                        badgeClass = 'bg-warning text-dark';
+                        statusText = '執行中';
+                    }
+
+                    let taskHtml = record.task;
+                    if (record.error_msg) {
+                        taskHtml += ` <i class="text-danger small" style="cursor:help;" title="${record.error_msg.replace(/"/g, '&quot;')}">⚠️</i>`;
+                    }
+
+                    const row = `
+                        <tr>
+                            <td>${taskHtml}</td>
+                            <td>${record.start_time}</td>
+                            <td>${record.end_time || '執行中'}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td>${record.duration || '正在執行'}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr><td colspan="5" class="text-center">暫無歷史紀錄</td></tr>');
+            }
+        }).fail(function() {
+            $("#historyTableBody").empty().append('<tr><td colspan="5" class="text-center text-danger">載入失敗</td></tr>');
+        });
+    }
+
+    // 顯示任務詳細資訊
+    function showTaskDetail(taskName) {
+        // 在這裡可以添加獲取特定任務詳細資訊的邏輯
+        alert('任務詳細資訊功能待實現: ' + taskName);
+    }
+
+    // 取得並渲染關鍵字
+    function fetchKeywords() {
+        $.get('{% url 'app_scrap_scheduling:api_keywords' %}', function(data) {
+            if (data.status === "success") {
+                renderKeywords(data.keywords);
+                $("#inputKeywords").val(data.keywords.join(", "));
+            }
+        });
+    }
+
+    // 渲染關鍵字標籤
+    function renderKeywords(keywords) {
+        const badgeList = $("#currentKeywordsBadgeList");
+        badgeList.empty();
+        if (keywords && keywords.length > 0) {
+            keywords.forEach(function(kw) {
+                badgeList.append(`<span class="badge bg-primary text-white me-1 fs-7">${kw}</span>`);
+            });
+        } else {
+            badgeList.append(`<span class="text-muted small">暫無關鍵字</span>`);
+        }
+    }
+
+    // 取得目前爬蟲模式
+    function fetchCrawlerMode() {
+        $.get('{% url 'app_scrap_scheduling:api_crawler_mode' %}', function(data) {
+            if (data.status === "success") {
+                $(`input[name='crawlerMode'][value='${data.mode}']`).prop('checked', true);
+                updateUILabels(data.mode);
+            }
+        });
+    }
+
+    // 更新伺服器端的爬蟲模式
+    function updateCrawlerModeOnServer(mode) {
+        $.post('{% url 'app_scrap_scheduling:api_crawler_mode' %}', { mode: mode }, function(res) {
+            // 切換成功後重新載入任務列表，以更新描述中的模式文字
+            loadSchedulerTasks();
+        }).fail(function(xhr) {
+            const err = xhr.responseJSON ? xhr.responseJSON.message : "切換模式失敗";
+            alert(err);
+        });
+    }
+
+    // 動態更新 UI 文字標籤與 placeholder
+    function updateUILabels(mode) {
+        const input = $("#inputKeywords");
+        const label = $("#labelKeywords");
+        const currentModeLabel = $("#currentModeLabel");
+        
+        if (mode === "keyword") {
+            label.text("自訂搜尋關鍵字");
+            input.attr("placeholder", "例如: 科技, 工作, 面試 (以英文或中文逗號分隔)");
+            currentModeLabel.text("關鍵字");
+        } else {
+            label.text("自訂爬取看板名稱");
+            input.attr("placeholder", "例如: tech_job, job, talk (以英文或中文逗號分隔)");
+            currentModeLabel.text("看板名稱");
+        }
+    }
+
+    // 取得已爬取的檔案清單
+    function fetchFileList() {
+        const tbodyCategory = $("#categoryFileTableBody");
+        const tbodyKeyword = $("#keywordFileTableBody");
+        tbodyCategory.empty().append('<tr><td colspan="5" class="text-center">載入檔案列表中...</td></tr>');
+        tbodyKeyword.empty().append('<tr><td colspan="5" class="text-center">載入檔案列表中...</td></tr>');
+        
+        $.get('{% url 'app_scrap_scheduling:api_download_files' %}', function(data) {
+            tbodyCategory.empty();
+            tbodyKeyword.empty();
+            let hasCategory = false;
+            let hasKeyword = false;
+
+            if (data.status === "success" && data.files && data.files.length > 0) {
+                data.files.forEach(function(file) {
+                    const row = `
+                        <tr>
+                            <td class="font-monospace small">${file.name}</td>
+                            <td><span class="badge ${file.type_code === 'category' ? 'bg-secondary' : 'bg-dark'}">${file.type}</span></td>
+                            <td>${file.size}</td>
+                            <td>${file.modified}</td>
+                            <td>
+                                <a href="${file.download_url}" class="btn btn-sm btn-primary py-0 px-2 fs-7" download>下載 CSV</a>
+                                <button class="btn btn-sm btn-danger py-0 px-2 fs-7 ms-1" onclick="deleteFile('${file.name}', '${file.type_code}')">丟棄</button>
+                            </td>
+                        </tr>
+                    `;
+                    if (file.type_code === 'category') {
+                        tbodyCategory.append(row);
+                        hasCategory = true;
+                    } else {
+                        tbodyKeyword.append(row);
+                        hasKeyword = true;
+                    }
+                });
+            }
+            
+            if (!hasCategory) {
+                tbodyCategory.append('<tr><td colspan="5" class="text-center text-muted">目前無看板爬取之資料 CSV 檔案</td></tr>');
+            }
+            if (!hasKeyword) {
+                tbodyKeyword.append('<tr><td colspan="5" class="text-center text-muted">目前無關鍵字搜尋之資料 CSV 檔案</td></tr>');
+            }
+        }).fail(function() {
+            tbodyCategory.empty().append('<tr><td colspan="5" class="text-center text-danger">載入檔案清單失敗</td></tr>');
+            tbodyKeyword.empty().append('<tr><td colspan="5" class="text-center text-danger">載入檔案清單失敗</td></tr>');
+        });
+    }
+
+    // 刪除檔案 (丟棄)
+    function deleteFile(fileName, fileType) {
+        if (confirm(`確定要丟棄檔案 ${fileName} 嗎？此動作無法復原。`)) {
+            $.post('{% url 'app_scrap_scheduling:api_delete_file' %}', { file: fileName, type: fileType }, function(res) {
+                if (res.status === "success") {
+                    alert(res.message);
+                    fetchFileList(); // 重新載入檔案清單
+                } else {
+                    alert(res.message || "刪除失敗");
+                }
+            }).fail(function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.message : "刪除失敗";
+                alert(err);
+            });
+        }
+    }
+
+</script>
+{% endblock %}

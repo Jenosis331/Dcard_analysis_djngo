@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh-TW">
+  <head>
+    <title>{% block title %}輿情分析平台 - AI 驅動視覺化大數據{% endblock %}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <!-- Google Fonts: Noto Sans TC for Chinese -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+    <style>
+      /* ── CSS 變數 / Design Tokens ── */
+      :root {
+        --brand-gradient: linear-gradient(135deg, #1a237e 0%, #283593 60%, #3949ab 100%);
+        --brand-color: #3949ab;
+        --brand-dark: #1a237e;
+        --accent-color: #42a5f5;
+        --bg-page: #f0f2f8;
+        --bg-card: #ffffff;
+        --bg-card-header: #f8f9ff;
+        --text-primary: #1a1f36;
+        --text-secondary: #5a6272;
+        --text-muted: #9aa3b4;
+        --border-color: #e2e6f0;
+        --shadow-sm: 0 1px 4px rgba(26, 35, 126, 0.08);
+        --shadow-card: 0 4px 20px rgba(26, 35, 126, 0.1);
+        --shadow-hover: 0 8px 30px rgba(26, 35, 126, 0.15);
+        --radius-card: 0.875rem;
+        --radius-badge: 0.5rem;
+        --transition: 0.2s ease;
+      }
+
+      /* ── Base ── */
+      * { box-sizing: border-box; }
+
+      body {
+        font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: var(--bg-page);
+        color: var(--text-primary);
+        font-size: 0.9375rem;
+        line-height: 1.65;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar { width: 7px; height: 7px; }
+      ::-webkit-scrollbar-track { background: var(--bg-page); }
+      ::-webkit-scrollbar-thumb { background: #c5cae9; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--brand-color); }
+
+      /* ── Navbar ── */
+      .navbar {
+        background: var(--brand-gradient) !important;
+        box-shadow: 0 2px 12px rgba(26, 35, 126, 0.3);
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        padding: 0.6rem 1rem;
+      }
+
+      .navbar-brand {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #ffffff !important;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .navbar-brand .brand-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+      }
+
+      .navbar-nav .nav-link {
+        color: rgba(255,255,255,0.88) !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        padding: 0.55rem 1rem !important;
+        border-radius: 0.4rem;
+        transition: background var(--transition), color var(--transition);
+      }
+
+      .navbar-nav .nav-link:hover,
+      .navbar-nav .nav-link.active-nav {
+        background: rgba(255,255,255,0.15);
+        color: #ffffff !important;
+      }
+
+      .navbar-toggler {
+        border-color: rgba(255,255,255,0.4);
+      }
+      .navbar-toggler-icon {
+        filter: invert(1);
+      }
+
+      /* ── Dropdown ── */
+      .dropdown-menu {
+        border: 1px solid var(--border-color);
+        border-radius: 0.625rem;
+        padding: 0.4rem;
+        box-shadow: var(--shadow-card);
+        min-width: 13rem;
+        animation: dropFadeIn 0.15s ease;
+      }
+
+      @keyframes dropFadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .dropdown-item {
+        border-radius: 0.4rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        padding: 0.45rem 0.85rem;
+        transition: background var(--transition), color var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .dropdown-item:hover {
+        background-color: #e8eaf6;
+        color: var(--brand-dark);
+      }
+
+      .dropdown-item i {
+        color: var(--brand-color);
+        font-size: 0.875rem;
+        width: 1.1em;
+      }
+
+      .dropdown-divider { border-color: var(--border-color); }
+
+      /* ── Page Wrapper ── */
+      .page-wrapper {
+        flex: 1;
+        padding: 1.5rem 0 2rem;
+      }
+
+      /* ── Page Header ── */
+      .page-header {
+        margin-bottom: 1.25rem;
+      }
+
+      .page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+      }
+
+      .page-header .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      /* ── Content Card ── */
+      .content-card {
+        background-color: var(--bg-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* ── Bootstrap Cards override ── */
+      .card {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow var(--transition);
+        overflow: hidden;
+      }
+
+      .card:hover {
+        box-shadow: var(--shadow-hover);
+      }
+
+      .card-header {
+        background-color: var(--bg-card-header);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.875rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+      }
+
+      .card-header h3,
+      .card-header h4 {
+        font-size: inherit;
+        font-weight: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+        color: inherit;
+        margin: 0;
+      }
+
+      .card-body {
+        padding: 1.25rem;
+      }
+
+      /* ── Form Controls ── */
+      .form-control, .form-select {
+        border-color: var(--border-color);
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        transition: border-color var(--transition), box-shadow var(--transition);
+      }
+
+      .form-control:focus, .form-select:focus {
+        border-color: var(--brand-color);
+        box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.15);
+      }
+
+      .form-label, .col-form-label {
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .form-text {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      /* ── Buttons ── */
+      .btn-primary {
+        background: var(--brand-gradient);
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        padding: 0.45rem 1.25rem;
+        letter-spacing: 0.01em;
+        transition: opacity var(--transition), box-shadow var(--transition), transform var(--transition);
+      }
+
+      .btn-primary:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 12px rgba(57, 73, 171, 0.35);
+        transform: translateY(-1px);
+        background: var(--brand-gradient);
+        border: none;
+      }
+
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      /* ── Badges ── */
+      .badge {
+        border-radius: var(--radius-badge);
+        font-weight: 500;
+        font-size: 0.75rem;
+      }
+
+      /* ── Section Title (h1 inside content) ── */
+      .content-card > .col-lg-12 > h1,
+      .content-card > div > .col-lg-12 > h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        border-left: 4px solid var(--brand-color);
+        padding-left: 0.75rem;
+        margin-bottom: 0.4rem;
+      }
+
+      /* ── Footer ── */
+      footer {
+        background: #ffffff;
+        border-top: 1px solid var(--border-color);
+        padding: 1.5rem 0;
+        text-align: center;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      footer .footer-brand {
+        font-weight: 600;
+        color: var(--brand-color);
+      }
+
+      footer .footer-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        margin: 0 0.75rem;
+        transition: color var(--transition);
+      }
+
+      footer .footer-links a:hover {
+        color: var(--brand-color);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .content-card {
+          padding: 1.25rem;
+        }
+        .navbar-collapse {
+          background: rgba(26, 35, 126, 0.95);
+          border-radius: 0.625rem;
+          margin-top: 0.5rem;
+          padding: 0.5rem;
+        }
+      }
+
+      /* ── Utility: Fade-in on load ── */
+      .content-card {
+        animation: fadeInUp 0.3s ease both;
+      }
+
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+  </head>
+
+  <body>
+    <!-- ── Navigation Bar ── -->
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid px-3">
+
+        <a class="navbar-brand" href="/">
+          <span class="brand-icon"><i class="bi bi-bar-chart-fill"></i></span>
+          輿情大數據
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-2">
+
+            <!-- 熱門分析 -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-fire me-1"></i>熱門分析
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_top_keyword:home' %}">
+                    <i class="bi bi-tags"></i>熱門關鍵詞分析
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_top_person:home' %}">
+                    <i class="bi bi-people"></i>熱門人物排行分析
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_user_keyword_sentiment:home' %}">
+                    <i class="bi bi-people"></i>熱門情感分析
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <!-- 進階查詢 -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-sliders me-1"></i>進階查詢
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_user_keyword:home' %}">
+                    <i class="bi bi-search"></i>自訂關鍵詞熱門度分析
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_user_keyword_association:home' %}">
+                    <i class="bi bi-diagram-3"></i>全文關聯分析
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <!-- 特色分析 -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-star me-1"></i>特色分析
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_kop:home' %}">
+                    <i class="bi bi-megaphone"></i>柯P聲量我最大
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+
+
+            {% comment %} <!-- 自然語言理解 -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-robot me-1"></i>自然語言理解
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{}">
+                    <i class="bi bi-chat-heart"></i>文字情緒分類
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{}">
+                    <i class="bi bi-newspaper"></i>新聞分類
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="{}">
+                    <i class="bi bi-cpu"></i>本地端 Qwen 模型問答
+                  </a>
+                </li>
+              </ul>
+            </li> {% endcomment %}
+            
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-broadcast-pin me-1"></i>機場聲量
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_airport_analysis:home_overview' %}">
+                    <i class="bi bi-pie-chart-fill"></i>情境聲量總覽
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_airport_analysis:home_trend' %}">
+                    <i class="bi bi-graph-up-arrow"></i>月度趨勢
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_airport_analysis:home_deepdive' %}">
+                    <i class="bi bi-search"></i>關鍵字深挖
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'app_airport_search:home' %}">
+                    <i class="bi bi-link-45deg"></i>新聞連結搜尋
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+
+          <!-- Right side info -->
+          <span class="navbar-text text-white-50 small d-none d-lg-block">
+            <i class="bi bi-clock me-1"></i><span id="nav-datetime"></span>
+          </span>
+        </div>
+
+      </div>
+    </nav>
+
+    
+    <!-- ── Main Content ── -->
+    <div class="page-wrapper">
+      <div class="container">
+        <div class="content-card">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <footer>
+      <div class="container">
+        <div class="mb-1">
+          <span class="footer-brand">
+            <i class="bi bi-bar-chart-fill me-1"></i>輿情分析平台
+          </span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ── JS Libraries ── -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+      // Active nav link detection
+      (function () {
+        var path = window.location.pathname;
+        document.querySelectorAll('.navbar-nav .dropdown-item').forEach(function (el) {
+          if (el.getAttribute('href') && path.startsWith(el.getAttribute('href').split('?')[0])) {
+            el.classList.add('fw-bold');
+            el.style.color = 'var(--brand-dark)';
+            // highlight parent dropdown toggle
+            var parent = el.closest('.nav-item');
+            if (parent) {
+              var toggle = parent.querySelector('.nav-link');
+              if (toggle) toggle.classList.add('active-nav');
+            }
+          }
+        });
+      })();
+
+      // Live datetime in navbar
+      (function () {
+        function updateTime() {
+          var now = new Date();
+          var s = now.getFullYear() + '/' +
+            String(now.getMonth() + 1).padStart(2, '0') + '/' +
+            String(now.getDate()).padStart(2, '0') + '  ' +
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0');
+          var el = document.getElementById('nav-datetime');
+          if (el) el.textContent = s;
+        }
+        updateTime();
+        setInterval(updateTime, 60000);
+      })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+*.log
+app_scrap_scheduling/selenium_profile/
+.cache/
+.vscode/
+.idea/

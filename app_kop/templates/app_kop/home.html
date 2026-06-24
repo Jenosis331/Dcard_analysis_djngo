@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 柯文哲聲量觀察{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #b71c1c 0%, #c62828 60%, #d32f2f 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #c62828; font-size: 1rem; }
+
+  .sov-stat {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sov-stat:last-child { border-bottom: none; }
+  .sov-stat .stat-icon {
+    width: 2.25rem; height: 2.25rem;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .sov-stat .stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+  .sov-stat .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-megaphone-fill"></i></div>
+  <div>
+    <h1>柯文哲聲量觀察</h1>
+    <p>針對特定人物做深入的聲量分析——了解其在各新聞類別中的能見度與時間變化</p>
+  </div>
+</div>
+
+<!-- ── Row 1：聲量統計 + 長條圖 ── -->
+<div class="row g-3 mb-3">
+  <!-- 網路聲量數據 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr">
+          <i class="bi bi-megaphone"></i>網路聲量
+          <span class="badge bg-light text-secondary fw-normal ms-1" style="font-size:0.7rem;text-transform:none;letter-spacing:0">資料週期：最近 4 週</span>
+        </span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          網路聲量是什麼？計算新聞報導中提及關鍵字的篇數與次數，聲量越高代表能見度越高。
+        </p>
+        <div id="share_of_voice"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 類別聲量長條圖 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-bar-chart-fill"></i>各類別聲量分布</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">在哪一類別的新聞中被報導最多篇？</p>
+        <canvas id="bar_chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 2：時間趨勢圖 + 說明 ── -->
+<div class="row g-3">
+  <!-- 聲量變化折線圖 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-graph-up-arrow"></i>聲量時間變化</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">在哪個時間點被新聞報導最多？</p>
+        <canvas id="line_chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 說明卡片 -->
+  <div class="col-lg-6">
+    <div class="card h-100" style="background:linear-gradient(135deg,#fbe9e7,#f0f2f8);border:none;">
+      <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-4">
+        <i class="bi bi-info-circle-fill" style="font-size:2.5rem;color:#c62828;opacity:0.4;"></i>
+        <p class="mt-3 mb-0 text-muted small">
+          <strong>總篇數</strong>：有多少篇新聞提到此關鍵字<br>
+          <strong>總次數</strong>：在相關新聞中被提到多少次<br><br>
+          聲量越高，代表在新聞媒體中的能見度越高。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script>
+  const freqByDate     = {{ freqByDate|safe }};
+  const freqByCate     = {{ freqByCate|safe }};
+  const news_category  = {{ category|safe }};
+  const num_occurrence = {{ num_occurrence|safe }};
+  const num_frequency  = {{ num_frequency|safe }};
+  const photo          = "{{ photo|safe }}";
+
+  displayShareOfVoice();
+  drawBarChart();
+  showLineChart();
+
+  function displayShareOfVoice() {
+    let html_snippet = `
+      <div class="row align-items-center mb-3">
+        <div class="col-4 col-md-3">
+          <img class="img-fluid rounded shadow-sm" src="${photo}" alt="柯文哲照片" style="max-height:120px;object-fit:cover;">
+        </div>
+        <div class="col-8 col-md-9">
+          <div class="sov-stat">
+            <div class="stat-icon bg-danger bg-opacity-10"><i class="bi bi-newspaper text-danger"></i></div>
+            <div>
+              <div class="stat-label">總篇數</div>
+              <div class="stat-value">${num_occurrence} 篇</div>
+            </div>
+          </div>
+          <div class="sov-stat">
+            <div class="stat-icon bg-warning bg-opacity-10"><i class="bi bi-hash text-warning"></i></div>
+            <div>
+              <div class="stat-label">總次數</div>
+              <div class="stat-value">${num_frequency} 次</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr>`;
+    const new_div = document.createElement("div");
+    new_div.innerHTML = html_snippet;
+    document.getElementById("share_of_voice").appendChild(new_div);
+  }
+
+  function drawBarChart() {
+    const freq_values = freqByCate;
+    const news_categories = news_category;
+    let data = {
+      labels: news_categories,
+      datasets: [{
+        label: "柯文哲聲量",
+        data: freq_values,
+        backgroundColor: randomColors(freq_values.length),
+        borderColor: randomColors(freq_values.length),
+        borderWidth: 1
+      }]
+    };
+    let options = {
+      scales: { yAxes: [{ ticks: { beginAtZero: true, responsive: true } }] }
+    };
+    const barChartElem = document.getElementById("bar_chart");
+    new Chart(barChartElem, { type: "bar", data: data, options: options });
+  }
+
+  function showLineChart() {
+    const lineChartElem = document.getElementById("line_chart").getContext("2d");
+    const freq_values = freqByDate;
+    const myoptions = {
+      type: "line",
+      data: {
+        datasets: [{
+          label: "s2",
+          borderColor: randomColors(1),
+          backgroundColor: randomColors(1),
+          borderWidth: 2,
+          data: freq_values
+        }]
+      },
+      options: {
+        legend: { display: false },
+        scales: {
+          xAxes: [{ type: "time", time: { unit: "day", displayFormats: { day: "MM/DD" } } }],
+          yAxes: [{
+            ticks: { beginAtZero: true, responsive: true },
+            display: true,
+            scaleLabel: { display: true, labelString: "出現次數" }
+          }]
+        }
+      }
+    };
+    if (window.time_line_chart) { time_line_chart.destroy(); }
+    time_line_chart = new Chart(lineChartElem, myoptions);
+  }
+
+  function randomColors(length) {
+    var pool = [];
+    for (let i = 0; i < length; i++) { pool.push(dynamicColors()); }
+    return pool;
+  }
+  function dynamicColors() {
+    var r = Math.floor(Math.random() * 255);
+    var g = Math.floor(Math.random() * 255);
+    var b = Math.floor(Math.random() * 255);
+    return "rgba(" + r + "," + g + "," + b + ", 0.3)";
+  }
+</script>
+{% endblock %}

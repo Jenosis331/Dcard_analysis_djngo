@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 關鍵字情緒分析{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #006064 0%, #00838f 60%, #00acc1 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #00838f; font-size: 1rem; }
+
+  /* 情緒統計徽章列 */
+  #senti_info {
+    list-style: none; padding: 0;
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  #senti_info li {
+    font-size: 0.82rem; border-radius: 2rem;
+    padding: 0.3rem 0.85rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-emoji-smile-fill"></i></div>
+  <div>
+    <h1>全文檢索與關鍵詞情緒分析</h1>
+    <p>了解關鍵詞相關報導的正面、負面、中立情緒分布，以及情緒隨時間的變化趨勢</p>
+  </div>
+</div>
+
+<!-- ── Row 1：查詢條件 + 圓餅圖 ── -->
+<div class="row g-3 mb-3">
+  <!-- 輸入條件 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-sliders"></i>查詢條件</span>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <label class="col-md-3 col-form-label">關鍵詞</label>
+          <div class="col-md-9">
+            <input id="input_keyword" name="userkey" value="薪水 台積電" class="form-control" />
+            <div class="form-text">全文搜尋，可輸入多個關鍵詞或片段詞句，以空白隔開</div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-sm-3 col-form-label">邏輯條件</label>
+          <div class="col-md-9">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="and" name="condradio" id="condradio1" checked />
+              <label class="form-check-label" for="condradio1">AND（同時包含）</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="or" name="condradio" id="condradio2" />
+              <label class="form-check-label" for="condradio2">OR（任一包含）</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-sm-3 col-form-label">新聞類別</label>
+          <div class="col-md-9">
+            {% for cate in categories %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="{{ cate }}" name="cateradio" id="cateradio{{ forloop.counter }}" {% if forloop.first %}checked{% endif %} />
+              <label class="form-check-label" for="cateradio{{ forloop.counter }}">{{ cate }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-md-3 col-form-label">時間範圍（週）</label>
+          <div class="col-md-9">
+            <div class="d-flex gap-1 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="1" name="wkradio" id="wkradio1" />
+                <label class="form-check-label" for="wkradio1">1週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="2" name="wkradio" id="wkradio2" checked />
+                <label class="form-check-label" for="wkradio2">2週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="3" name="wkradio" id="wkradio3" />
+                <label class="form-check-label" for="wkradio3">3週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="4" name="wkradio" id="wkradio4" />
+                <label class="form-check-label" for="wkradio4">4週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="6" name="wkradio" id="wkradio6" />
+                <label class="form-check-label" for="wkradio6">6週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="8" name="wkradio" id="wkradio8" />
+                <label class="form-check-label" for="wkradio8">8週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="12" name="wkradio" id="wkradio12" />
+                <label class="form-check-label" for="wkradio12">12週</label>
+              </div>
+            </div>
+            <div class="form-text">以最新資料時間為基準往前推算</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-9 ms-auto">
+            <button type="button" id="btn_ok" class="btn btn-primary w-100">
+              <i class="bi bi-search me-1"></i>查詢
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 圓餅圖 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-pie-chart-fill"></i>情緒分布（文章層級）</span>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <canvas id="article_senti_pie_chart" style="max-height:260px;"></canvas>
+        <ul id="senti_info"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 2：情緒趨勢折線圖（全寬） ── -->
+<div class="row g-3">
+  <div class="col-lg-12">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-graph-up-arrow"></i>正面 / 負面情緒時間變化</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">
+          每個時間點正面與負面報導的篇數（每天統計；6 週含以上以 5 天為單位統計）
+        </p>
+        <canvas id="time_line_chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script>
+  call_ajax()
+
+  $('#btn_ok').on('click', function () { call_ajax() })
+  $("input[name='cateradio']").on('change', function () { call_ajax() })
+  $("input[name='wkradio']").on('change', function () { call_ajax() })
+  $("input[name='condradio']").on('change', function () { call_ajax() })
+
+  let linechartElem = document.getElementById('time_line_chart').getContext('2d')
+  let piechartElem  = document.getElementById('article_senti_pie_chart').getContext('2d')
+
+  function call_ajax() {
+    const userkey = $('#input_keyword').val()
+    const weeks   = $("input[name='wkradio']:checked").val()
+    const cate    = $("input[name='cateradio']:checked").val()
+    const cond    = $("input[name='condradio']:checked").val()
+
+    if (userkey.length < 2) {
+      alert('輸入關鍵字不可空白或小於兩個中文字!')
+      return 0
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: 'api_get_userkey_sentiment/',
+      data: { userkey: userkey, cate: cate, weeks: weeks, cond: cond },
+      success: function (received) {
+        if (received["error"]) {
+          alert("檢索異常回應: " + received["error"])
+          return 0
+        }
+
+        const data_pie = received['sentiCount']
+        if (window.piechart) piechart.destroy()
+        piechart = drawPieChart(piechartElem, data_pie)
+
+        $('#senti_info').empty()
+        for (let k in data_pie) {
+          $('#senti_info').append(`<li class="badge bg-warning text-dark">${k}: ${data_pie[k]}篇</li>`)
+        }
+
+        const data_pos = received['data_pos']
+        const data_neg = received['data_neg']
+        if (window.linechart) linechart.destroy()
+        linechart = drawLineChart(linechartElem, data_pos, data_neg)
+      }
+    })
+  }
+
+  function drawPieChart(chartElem, chartdata) {
+    let chartSpec = {
+      type: 'pie',
+      data: {
+        labels: ['正面', '負面', '中立'],
+        datasets: [{
+          data: [chartdata.Positive, chartdata.Negative, chartdata.Neutral],
+          backgroundColor: ['rgba(0,0,255,0.3)', 'rgba(255,0,0,0.3)', 'rgba(150,150,150,0.3)']
+        }]
+      },
+      options: {}
+    }
+    return new Chart(chartElem, chartSpec)
+  }
+
+  function drawLineChart(linechartElem, data_pos, data_neg) {
+    let dataPos = {
+      label: '正面', data: data_pos,
+      borderColor: 'rgba(0,0,255,0.3)', backgroundColor: 'rgba(0,0,255,0.2)',
+      borderWidth: 1, fill: true
+    }
+    let dataNeg = {
+      label: '負面', data: data_neg,
+      borderColor: 'rgba(255,0,0,0.3)', backgroundColor: 'rgba(255,0,0,0.2)',
+      borderWidth: 1, fill: true
+    }
+    let options_detail = {
+      legend: { display: true },
+      scales: {
+        xAxes: [{ type: 'time', time: { unit: 'day', displayFormats: { day: 'MM/DD' } } }],
+        yAxes: [{
+          ticks: { beginAtZero: true },
+          display: true,
+          scaleLabel: { display: true, labelString: '篇數' }
+        }]
+      }
+    }
+    return new Chart(linechartElem, {
+      type: 'line',
+      data: { datasets: [dataPos, dataNeg] },
+      options: options_detail
+    })
+  }
+</script>
+{% endblock %}

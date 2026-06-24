@@ -1,0 +1,716 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}首頁 - 輿情大數據分析平台{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Homepage Specific Styles ── */
+  .hero-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+    color: #ffffff;
+    padding: 3rem 2rem;
+    border-radius: 1.25rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+  }
+
+  .hero-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .hero-banner h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(to right, #ffffff, #c7d2fe, #e0e7ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-subtitle {
+    color: #cbd5e1;
+    font-size: 1.05rem;
+    max-width: 800px;
+    margin-top: 0.75rem;
+    font-weight: 300;
+  }
+
+  .section-title-custom {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .section-title-custom i {
+    font-size: 1.4rem;
+  }
+
+  /* Portal Card Design */
+  .portal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .portal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    transition: background-color 0.3s ease;
+  }
+
+  .portal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(26, 35, 126, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  /* Different category accent colors */
+  .cat-sentiment .portal-card:hover::before { background: linear-gradient(to right, #4f46e5, #3b82f6); }
+  .cat-query .portal-card:hover::before { background: linear-gradient(to right, #10b981, #059669); }
+  .cat-ai .portal-card:hover::before { background: linear-gradient(to right, #8b5cf6, #ec4899); }
+  .cat-airport .portal-card:hover::before { background: linear-gradient(to right, #0ea5e9, #2563eb); }
+  .cat-crawler .portal-card:hover::before { background: linear-gradient(to right, #f59e0b, #d97706); }
+
+  .portal-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+  }
+
+  .portal-card:hover .portal-icon-wrapper {
+    transform: scale(1.1);
+  }
+
+  /* Soft backgrounds for icons */
+  .bg-soft-indigo { background-color: #e0e7ff; color: #4338ca; }
+  .bg-soft-emerald { background-color: #d1fae5; color: #047857; }
+  .bg-soft-purple { background-color: #f3e8ff; color: #6d28d9; }
+  .bg-soft-sky { background-color: #e0f2fe; color: #0369a1; }
+  .bg-soft-amber { background-color: #fef3c7; color: #b45309; }
+
+  .portal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .portal-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+  }
+
+  .portal-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--brand-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .portal-action:hover {
+    color: var(--accent-color);
+  }
+
+  .portal-action i {
+    transition: transform 0.2s ease;
+  }
+
+  .portal-card:hover .portal-action i {
+    transform: translateX(3px);
+  }
+
+  /* Grid spacing overrides */
+  .category-section {
+    margin-bottom: 3rem;
+  }
+
+  /* Override standard content card styling for index page to have no padding container */
+  body {
+    background-color: #f8fafc;
+  }
+
+  /* Modify default layout inside base.html for this view to make it look full-width and modern */
+  .content-card {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* ── Custom Category Settings Styles ── */
+  .custom-check-card {
+    border: 1.5px solid var(--border-color);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .custom-check-card:hover {
+    border-color: var(--brand-color);
+    background-color: rgba(67, 56, 202, 0.02);
+    transform: translateY(-2px);
+  }
+
+  .custom-check-card input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 0.25rem;
+    border: 1.5px solid var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .custom-check-card input[type="checkbox"]:checked {
+    background-color: var(--brand-color);
+    border-color: var(--brand-color);
+  }
+
+  /* Style for when card is checked */
+  .custom-check-card.card-checked {
+    border-color: var(--brand-color);
+    background: linear-gradient(135deg, rgba(67, 56, 202, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+    box-shadow: 0 4px 12px rgba(67, 56, 202, 0.08);
+  }
+
+  .cursor-pointer {
+    cursor: pointer !important;
+  }
+
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #3949ab 0%, #1a237e 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 10px rgba(26, 35, 126, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #4758c4 0%, #212c96 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(26, 35, 126, 0.3);
+    color: white;
+  }
+
+  .text-indigo {
+    color: #4338ca;
+  }
+
+  .bg-soft-indigo {
+    background-color: #e0e7ff;
+    color: #4338ca;
+  }
+  
+  .db-stats-bar {
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-top: 1px dashed var(--border-color);
+    transition: opacity 0.2s ease;
+  }
+  
+  .db-stats-bar:hover {
+    opacity: 1;
+  }
+
+  .db-stats-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .db-stats-item:hover {
+    background-color: rgba(67, 56, 202, 0.04);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Hero Banner ── -->
+<div class="hero-banner">
+  <div class="row align-items-center">
+    <div class="col-md-9">
+      <h1>輿情大數據分析平台</h1>
+      <p class="hero-subtitle">
+        整合網路爬蟲、即時數據庫、多維度圖表與大型語言模型 (LLM)，一站式解構社群脈動、情緒走向與旅客反饋，協助您精準掌握輿論焦點。
+      </p>
+    </div>
+    <div class="col-md-3 text-end d-none d-md-block">
+      <i class="bi bi-graph-up-arrow text-white-50" style="font-size: 6rem; opacity: 0.15;"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category: 自訂看板類別 (Settings) ── -->
+<div class="category-section mb-4">
+  <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+      <h5 class="m-0 fw-bold text-indigo d-flex align-items-center gap-2">
+        <i class="bi bi-sliders text-indigo"></i> 自訂看板類別設定
+      </h5>
+      <span class="badge bg-soft-indigo text-indigo">動態同步</span>
+    </div>
+    <div class="card-body bg-light bg-opacity-50 p-4">
+      <p class="text-secondary small mb-3">
+        您可以自訂要在平台中分析的 Dcard 看板類別。下方可選的類別是由資料庫中 <code>dcard_data3_tokenpos_all</code> 自動讀取取得。選取並儲存後，將會即時同步更新平台所有相關分析頁面。
+      </p>
+      
+      <form id="category-settings-form">
+        <div class="row g-3 mb-4">
+          {% for cate in all_categories %}
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <div class="form-check custom-check-card p-3 border rounded bg-white text-center cursor-pointer position-relative h-100 transition-all">
+              <input class="form-check-input position-absolute top-50 start-0 translate-middle-y ms-3" type="checkbox" name="categories" value="{{ cate }}" id="cate_{{ forloop.counter }}" {% if cate in current_categories %}checked{% endif %}>
+              <label class="form-check-label d-block text-center w-100 fw-bold text-dark cursor-pointer ps-4" for="cate_{{ forloop.counter }}">
+                {{ cate }}
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-select-all">
+              <i class="bi bi-check2-all me-1"></i>全選
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-deselect-all">
+              <i class="bi bi-x-circle me-1"></i>取消全選
+            </button>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-gradient-primary px-4 fw-bold shadow-sm" id="btn-save-categories">
+              <i class="bi bi-save me-1"></i>儲存類別設定
+            </button>
+          </div>
+        </div>
+      </form>
+      
+      <!-- Feedback Message -->
+      <div id="settings-alert" class="alert alert-success d-none mt-3 mb-0" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>設定已成功更新！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category: 熱門輿情分析 ── -->
+<div class="category-section cat-sentiment">
+  <h2 class="section-title-custom text-indigo">
+    <i class="bi bi-fire text-danger"></i>熱門輿情分析
+  </h2>
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-indigo">
+            <i class="bi bi-tags-fill"></i>
+          </div>
+          <h3 class="portal-title">熱門關鍵詞分析</h3>
+          <p class="portal-desc">分析目前社群媒體與新聞焦點中最火熱的關鍵詞及話題排行。</p>
+        </div>
+        <a href="{% url 'app_top_keyword:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-indigo">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <h3 class="portal-title">熱門人物排行</h3>
+          <p class="portal-desc">統計並展示熱門政治與公眾人物的社群關注度與排名起伏。</p>
+        </div>
+        <a href="{% url 'app_top_person:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 3 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-indigo">
+            <i class="bi bi-heart-half"></i>
+          </div>
+          <h3 class="portal-title">熱門情感分析</h3>
+          <p class="portal-desc">深入剖析各大社群熱門關鍵字的正向、中立與負向情感佔比。</p>
+        </div>
+        <a href="{% url 'app_user_keyword_sentiment:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 4 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-indigo">
+            <i class="bi bi-megaphone-fill"></i>
+          </div>
+          <h3 class="portal-title">柯P聲量我最大</h3>
+          <p class="portal-desc">專題觀測與比較柯文哲、陳時中等特定政治焦點人物的討論聲量。</p>
+        </div>
+        <a href="{% url 'app_kop:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category: 進階檢索與關聯 ── -->
+<div class="category-section cat-query">
+  <h2 class="section-title-custom text-emerald">
+    <i class="bi bi-sliders text-success"></i>進階檢索與關聯
+  </h2>
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-emerald">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <h3 class="portal-title">自訂關鍵詞熱度</h3>
+          <p class="portal-desc">提供使用者自訂特定關鍵字，分析隨時間推移的網路討論熱度趨勢。</p>
+        </div>
+        <a href="{% url 'app_user_keyword:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-emerald">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <h3 class="portal-title">全文關聯分析</h3>
+          <p class="portal-desc">利用全文檢索模型，深入挖掘與目標關鍵詞高度關聯的核心詞彙網路。</p>
+        </div>
+        <a href="{% url 'app_user_keyword_association:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Category: 智慧 AI 工具 ── -->
+<div class="category-section cat-ai">
+  <h2 class="section-title-custom text-purple">
+    <i class="bi bi-robot text-primary"></i>智慧 AI 分析工具
+  </h2>
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-6">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-purple">
+            <i class="bi bi-journal-code"></i>
+          </div>
+          <h3 class="portal-title">LLM 智慧生成分析報告</h3>
+          <p class="portal-desc">串接 Gemini API 大語言模型，根據您指定的關鍵字自動解讀數據並生成專業分析報告。</p>
+        </div>
+        <a href="{% url 'app_user_keyword_llm_report:home' %}" class="portal-action">
+          開始生成 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-6">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-purple">
+            <i class="bi bi-chat-left-dots-fill"></i>
+          </div>
+          <h3 class="portal-title">Dcard 輿情智能代理 (LangChain)</h3>
+          <p class="portal-desc">採用先進 AI 代理對話系統，透過聊天問答方式快速梳理與探討 Dcard 社群輿情焦點。</p>
+        </div>
+        <a href="{% url 'app_poa_langchain:chat_view' %}" class="portal-action">
+          開始對話 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category: 主題輿情專區 ── -->
+<div class="category-section cat-airport">
+  <h2 class="section-title-custom text-sky d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <span class="d-flex align-items-center gap-2">
+      <i class="bi bi-tag-fill text-info"></i>{{ request.session.active_theme|default:"機場" }}輿情專區
+    </span>
+    <a href="{% url 'app_airport_analysis:theme_manager' %}" class="btn btn-sm btn-outline-primary fw-bold" style="font-size:0.8rem;border-radius:0.5rem;">
+      <i class="bi bi-sliders me-1"></i>數據與主題管理
+    </a>
+  </h2>
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-sky">
+            <i class="bi bi-pie-chart-fill"></i>
+          </div>
+          <h3 class="portal-title">情境聲量總覽</h3>
+          <p class="portal-desc">視覺化呈現該主題的總體討論聲量、情境佔比與主題類別指標。</p>
+        </div>
+        <a href="{% url 'app_airport_analysis:home_overview' %}" class="portal-action">
+          進入專區 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-sky">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <h3 class="portal-title">月度聲量趨勢</h3>
+          <p class="portal-desc">追蹤該主題在不同月份的聲量起伏與動態趨勢變化。</p>
+        </div>
+        <a href="{% url 'app_airport_analysis:home_trend' %}" class="portal-action">
+          進入專區 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 3 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-sky">
+            <i class="bi bi-search-heart"></i>
+          </div>
+          <h3 class="portal-title">關鍵字深度挖掘</h3>
+          <p class="portal-desc">針對該主題討論中的高頻或特定字詞，進行主題式的深度脈絡探尋。</p>
+        </div>
+        <a href="{% url 'app_airport_analysis:home_deepdive' %}" class="portal-action">
+          進入專區 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 4 -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-sky">
+            <i class="bi bi-link-45deg"></i>
+          </div>
+          <h3 class="portal-title">新聞連結搜尋</h3>
+          <p class="portal-desc">一站式快速檢索與該主題輿情焦點事件相關的原始媒體報導與新聞網址。</p>
+        </div>
+        <a href="{% url 'app_airport_search:home' %}" class="portal-action">
+          進入專區 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category: 自助爬蟲與管理 ── -->
+<div class="category-section cat-crawler">
+  <h2 class="section-title-custom text-warning">
+    <i class="bi bi-gear-fill text-warning"></i>數據採集與系統管理
+  </h2>
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-amber">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <h3 class="portal-title">Dcard 爬蟲排程管理</h3>
+          <p class="portal-desc">自助式設定 Dcard 看板、關鍵詞爬取任務，並管理背景定時任務排程。</p>
+        </div>
+        <a href="{% url 'app_scrap_scheduling:scheduler' %}" class="portal-action">
+          進入管理 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-amber">
+            <i class="bi bi-chat-right-text-fill"></i>
+          </div>
+          <h3 class="portal-title">留言情緒分析</h3>
+          <p class="portal-desc">針對爬取到的 Dcard 留言資料進行批次語意情緒分析，掌握大眾真實評價。</p>
+        </div>
+        <a href="{% url 'app_comment_sentiment:home' %}" class="portal-action">
+          進入分析 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    {% comment %} <!-- Card 3 -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon-wrapper bg-soft-amber">
+            <i class="bi bi-shield-lock-fill"></i>
+          </div>
+          <h3 class="portal-title">系統後台資料庫管理</h3>
+          <p class="portal-desc">Django 系統管理員後台，用於管理使用者帳號、資料庫表格與系統配置。</p>
+        </div>
+        <a href="/admin/" class="portal-action">
+          進入後台 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div> {% endcomment %}
+  </div>
+</div>
+
+<!-- ── 系統數據統計 ── -->
+<div class="d-flex justify-content-center align-items-center gap-4 mt-5 pt-3 db-stats-bar text-muted" style="opacity: 0.8;">
+  <span class="db-stats-item">
+    <i class="bi bi-database text-indigo" style="font-size: 0.95rem;"></i> 
+    <span>資料庫總數：<strong class="text-dark fw-bold">{{ db_count|default:"0" }}</strong> 筆</span>
+  </span>
+  <span class="text-muted opacity-25">|</span>
+  <span class="db-stats-item">
+    <i class="bi bi-bezier2 text-purple" style="font-size: 0.95rem;"></i> 
+    <span>向量資料庫總數：<strong class="text-dark fw-bold">{{ chroma_count|default:"0" }}</strong> 筆</span>
+  </span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Update class when checkbox changes
+  $('.custom-check-card input[type="checkbox"]').on('change', function() {
+    if ($(this).is(':checked')) {
+      $(this).closest('.custom-check-card').addClass('card-checked');
+    } else {
+      $(this).closest('.custom-check-card').removeClass('card-checked');
+    }
+  });
+
+  // Initialize checked classes
+  $('.custom-check-card input[type="checkbox"]').each(function() {
+    if ($(this).is(':checked')) {
+      $(this).closest('.custom-check-card').addClass('card-checked');
+    }
+  });
+
+  // Clicking the card itself toggles the checkbox
+  $('.custom-check-card').on('click', function(e) {
+    if (!$(e.target).is('input') && !$(e.target).is('label')) {
+      var $checkbox = $(this).find('input[type="checkbox"]');
+      $checkbox.prop('checked', !$checkbox.is(':checked')).trigger('change');
+    }
+  });
+
+  // Select all
+  $('#btn-select-all').on('click', function() {
+    $('.custom-check-card input[type="checkbox"]').prop('checked', true).trigger('change');
+  });
+
+  // Deselect all
+  $('#btn-deselect-all').on('click', function() {
+    $('.custom-check-card input[type="checkbox"]').prop('checked', false).trigger('change');
+  });
+
+  // AJAX submit form
+  $('#category-settings-form').on('submit', function(e) {
+    e.preventDefault();
+    var selected = [];
+    $('.custom-check-card input[type="checkbox"]:checked').each(function() {
+      selected.push($(this).val());
+    });
+
+    var $btn = $('#btn-save-categories');
+    var originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>儲存中...');
+
+    $.ajax({
+      url: window.location.pathname,
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ categories: selected }),
+      success: function(response) {
+        $btn.prop('disabled', false).html(originalHtml);
+        
+        // Show success alert
+        var $alert = $('#settings-alert');
+        $alert.removeClass('d-none alert-danger').addClass('alert-success').html('<i class="bi bi-check-circle-fill me-2"></i>設定已成功更新！即時同步完成。');
+        $alert.hide().fadeIn();
+        setTimeout(function() {
+          $alert.fadeOut();
+        }, 3000);
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html(originalHtml);
+        var errorMsg = '儲存失敗，請重試。';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMsg = '錯誤: ' + xhr.responseJSON.message;
+        }
+        var $alert = $('#settings-alert');
+        $alert.removeClass('d-none alert-success').addClass('alert-danger').html('<i class="bi bi-exclamation-triangle-fill me-2"></i>' + errorMsg);
+        $alert.hide().fadeIn();
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+[
+  {
+    "run_id": "a843ae7b-19e8-4efa-8957-954f48c2778b",
+    "task": "手動爬蟲任務 (關鍵字搜尋模式)，目標：高科大",
+    "start_time": "2026-06-23 14:11:20",
+    "end_time": "2026-06-23 14:30:15",
+    "status": "success",
+    "duration": "18分55秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "23a3ce22-6c38-464e-b839-eb6b94eab1a6",
+    "task": "手動爬蟲任務 (關鍵字搜尋模式)，目標：元大台灣50",
+    "start_time": "2026-06-21 19:14:04",
+    "end_time": "2026-06-21 19:31:07",
+    "status": "success",
+    "duration": "17分3秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "2a8556ba-19e2-40d4-9f57-1de74d77596a",
+    "task": "手動爬蟲任務 (關鍵字搜尋模式)，目標：聯發科",
+    "start_time": "2026-06-20 19:27:06",
+    "end_time": "2026-06-20 19:46:26",
+    "status": "success",
+    "duration": "19分20秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "1219bf78-becd-414b-9495-9d159d36232d",
+    "task": "自動排程任務 (看板爬取模式)，限制篇數：20，目標：tech_job, job, talk, money, stock",
+    "start_time": "2026-06-11 14:00:00",
+    "end_time": "2026-06-11 15:33:49",
+    "status": "success",
+    "duration": "93分49秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "3c926e0b-b6c9-4119-8683-04cd5eeb2fe3",
+    "task": "自動排程任務 (看板爬取模式)，目標：tech_job, job, talk, money, stock",
+    "start_time": "2026-06-11 02:00:00",
+    "end_time": "2026-06-11 02:02:26",
+    "status": "success",
+    "duration": "2分26秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "e4e02d69-d550-4718-bb17-fcc0083aff49",
+    "task": "手動爬蟲任務 (看板爬取模式)，目標：tech_job, job, talk, money, stock",
+    "start_time": "2026-06-09 21:32:03",
+    "end_time": "2026-06-09 23:08:41",
+    "status": "success",
+    "duration": "96分38秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "5dc65ced-471a-4713-9db0-5ff677c4819e",
+    "task": "自動排程任務 (看板爬取模式)，目標：stock, money, tech_job, job",
+    "start_time": "2026-06-07 02:00:00",
+    "end_time": "2026-06-07 03:15:18",
+    "status": "success",
+    "duration": "75分18秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "44470bf3-8dd5-4c97-9fff-123b4412cd36",
+    "task": "手動爬蟲任務 (看板爬取模式)，目標：stock, money, tech_job, job",
+    "start_time": "2026-06-06 16:48:57",
+    "end_time": "2026-06-06 18:03:49",
+    "status": "success",
+    "duration": "74分52秒",
+    "error_msg": null
+  },
+  {
+    "run_id": "28c264b6-5c7a-4248-ae38-822334a12755",
+    "task": "手動爬蟲任務 (看板爬取模式)，目標：stock, money, tech_job, job",
+    "start_time": "2026-06-06 16:44:54",
+    "end_time": "2026-06-06 16:45:44",
+    "status": "failed",
+    "duration": "50秒",
+    "error_msg": "Traceback (most recent call last):\n  File \"C:\\Users\\Chen\\Desktop\\proj\\website-news-analysis_10\\app_scrap_scheduling\\get_dcard_by_category.py\", line 504, in <module>\n    main()\n    ~~~~^^\n  File \"C:\\Users\\Chen\\Desktop\\proj\\website-news-analysis_10\\app_scrap_scheduling\\get_dcard_by_category.py\", line 498, in main\n    raise e\n  File \"C:\\Users\\Chen\\Desktop\\proj\\website-news-analysis_10\\app_scrap_scheduling\\get_dcard_by_category.py\", line 434, in main\n    articles = get_article_list(driver, target_ur"
+  }
+]

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 熱門人物排行分析{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #388e3c 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #2e7d32; font-size: 1rem; }
+
+  #topkeys {
+    list-style: none; padding: 0; margin: 0;
+    counter-reset: person-counter;
+  }
+  #topkeys li {
+    counter-increment: person-counter;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+  }
+  #topkeys li:last-child { border-bottom: none; }
+  #topkeys li::before {
+    content: counter(person-counter);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem;
+    background: #2e7d32; color: #fff;
+    border-radius: 50%; font-size: 0.68rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .form-check-inline .form-check-input:checked + .form-check-label {
+    font-weight: 600;
+    color: #2e7d32;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-people-fill"></i></div>
+  <div>
+    <h1>熱門人物排行分析</h1>
+    <p>統計各板新聞中被報導最多次的人物，一覽輿論焦點所在</p>
+  </div>
+</div>
+
+<!-- ── Row 1：篩選條件 + 圖表 ── -->
+<div class="row g-3 mb-3">
+  <!-- 篩選條件 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-sliders"></i>篩選條件
+          <span class="badge bg-light text-secondary fw-normal ms-1" style="font-size:0.7rem;text-transform:none;letter-spacing:0">資料週期：最近 4 週</span>
+        </span>
+      </div>
+      <div class="card-body">
+        <!-- 文章類別 -->
+        <div class="mb-4 row">
+          <label class="col-sm-3 form-label">文章類別</label>
+          <div class="col-md-9">
+            {% for cate in categories %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="{{ cate }}" name="cateradio" id="cateradio{{ forloop.counter }}" {% if cate == '全部' %}checked{% endif %} />
+              <label class="form-check-label" for="cateradio{{ forloop.counter }}">{{ cate }}{% if cate != '全部' %}板{% endif %}</label>
+            </div>
+            {% endfor %}
+            <div class="form-text">內定值為「全部」新聞</div>
+          </div>
+        </div>
+
+        <!-- 顯示數量 -->
+        <div class="mb-2 row">
+          <label class="col-md-3 form-label">顯示人數</label>
+          <div class="col-md-9">
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="5" name="topkradio" id="topk5" />
+                <label class="form-check-label" for="topk5">前 5</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="10" name="topkradio" id="topk10" checked />
+                <label class="form-check-label" for="topk10">前 10</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="20" name="topkradio" id="topk20" />
+                <label class="form-check-label" for="topk20">前 20</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="30" name="topkradio" id="topk30" />
+                <label class="form-check-label" for="topk30">前 30</label>
+              </div>
+            </div>
+            <div class="form-text">內定值為前 10 位</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 圖表 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-bar-chart-fill"></i>人物次數圖表</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="mychart" style="max-height:280px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 2：人物排行列表 + 說明 ── -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-trophy-fill"></i>人物次數排行</span>
+      </div>
+      <div class="card-body">
+        <ul id="topkeys"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100" style="background:linear-gradient(135deg,#e8f5e9,#f0f2f8);border:none;">
+      <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-4">
+        <i class="bi bi-person-lines-fill" style="font-size:2.5rem;color:#2e7d32;opacity:0.45;"></i>
+        <p class="mt-2 mb-0 text-muted small">
+          選擇類別及顯示人數，<br>即時呈現近期最受關注的人物排行。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script>
+  call_ajax()
+
+  $("input[name='cateradio']").on('change', function () { call_ajax() })
+  $("input[name='topkradio']").on('change', function () { call_ajax() })
+
+  function call_ajax() {
+    const cate = $("input[name='cateradio']:checked").val()
+    const topk = $("input[name='topkradio']:checked").val()
+    $.ajax({
+      type: 'POST',
+      url: '/topperson/api_get_topPerson/',
+      data: { news_category: cate, topk: topk },
+      success: function (received) {
+        chart_data = received.chart_data
+        wf_pairs = received.wf_pairs
+        console.log(wf_pairs)
+        showChart(chart_data)
+        showTopKeys(wf_pairs)
+      }
+    })
+  }
+
+  function showTopKeys(items) {
+    $('#topkeys').empty()
+    for (let i = 0; i < items.length; i++) {
+      let item_li = '<li>' + items[i] + '</li>'
+      $('#topkeys').append(item_li)
+    }
+  }
+
+  function showChart(chart_data) {
+    let values = chart_data.values
+    let labels = chart_data.labels
+    let category = chart_data.category
+    let data = {
+      labels: labels,
+      datasets: [{
+        label: category,
+        data: values,
+        backgroundColor: randomColors(values.length),
+        borderColor: randomColors(values.length),
+        borderWidth: 1
+      }]
+    }
+    let options = { scales: { yAxes: [{ ticks: { beginAtZero: true } }] } }
+    let canvas_mychrat = document.getElementById('mychart')
+    if (window.barchart) { barchart.destroy() }
+    barchart = new Chart(canvas_mychrat, { type: 'bar', data: data, options: options })
+
+    function randomColors(num_colors) {
+      let colors = []
+      for (let i = 0; i < num_colors; i++) {
+        let r = Math.floor(Math.random() * 255)
+        let g = Math.floor(Math.random() * 255)
+        let b = Math.floor(Math.random() * 255)
+        colors.push(`rgba(${r},${g},${b},0.5)`)
+      }
+      return colors
+    }
+  }
+</script>
+{% endblock %}

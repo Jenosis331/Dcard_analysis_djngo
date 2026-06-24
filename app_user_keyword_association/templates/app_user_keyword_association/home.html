@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 全文關聯分析{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #01579b 0%, #0277bd 60%, #0288d1 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #0277bd; font-size: 1rem; }
+
+  #related_words {
+    list-style: none; padding: 0; margin: 0;
+    counter-reset: rel-counter;
+  }
+  #related_words li {
+    counter-increment: rel-counter;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.4rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+  }
+  #related_words li:last-child { border-bottom: none; }
+  #related_words li::before {
+    content: counter(rel-counter);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem;
+    background: #0277bd; color: #fff;
+    border-radius: 50%; font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+  }
+
+  .num-articles-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: #fff3e0;
+    border: 1px solid #ffcc80;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    font-size: 1rem; font-weight: 700; color: #e65100;
+    margin-bottom: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-diagram-3-fill"></i></div>
+  <div>
+    <h1>全文檢索與關鍵詞關聯分析</h1>
+    <p>對你想了解的議題進行全文搜尋，找出哪些詞與你的關鍵詞同時出現</p>
+  </div>
+</div>
+
+<!-- ── Row 1：查詢條件 + 文字雲 ── -->
+<div class="row g-3 mb-3">
+  <!-- 輸入條件 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-sliders"></i>查詢條件</span>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <label class="col-md-3 col-form-label">關鍵詞</label>
+          <div class="col-md-9">
+            <input id="input_keyword" name="userkey" value="台積電 薪水" class="form-control" />
+            <div class="form-text">全文搜尋，可輸入多個關鍵詞或片段詞句，以空白隔開</div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-sm-3 col-form-label">邏輯條件</label>
+          <div class="col-md-9">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="and" name="condradio" id="condradio1" checked />
+              <label class="form-check-label" for="condradio1">AND（同時包含）</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="or" name="condradio" id="condradio2" />
+              <label class="form-check-label" for="condradio2">OR（任一包含）</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-sm-3 col-form-label">類別</label>
+          <div class="col-md-9">
+            {% for cate in categories %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" value="{{ cate }}" name="cateradio" id="cateradio{{ forloop.counter }}" {% if forloop.first %}checked{% endif %} />
+              <label class="form-check-label" for="cateradio{{ forloop.counter }}">{{ cate }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="col-md-3 col-form-label">時間範圍（週）</label>
+          <div class="col-md-9">
+            <div class="d-flex gap-1 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="1" name="wkradio" id="wkradio1" />
+                <label class="form-check-label" for="wkradio1">1週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="2" name="wkradio" id="wkradio2" checked />
+                <label class="form-check-label" for="wkradio2">2週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="3" name="wkradio" id="wkradio3" />
+                <label class="form-check-label" for="wkradio3">3週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="4" name="wkradio" id="wkradio4" />
+                <label class="form-check-label" for="wkradio4">4週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" value="6" name="wkradio" id="wkradio6" />
+                <label class="form-check-label" for="wkradio6">6週</label>
+              </div>
+            </div>
+            <div class="form-text">以最新資料時間為基準往前推算</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-9 ms-auto">
+            <button type="button" id="btn_ok" class="btn btn-primary w-100">
+              <i class="bi bi-search me-1"></i>查詢
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文字雲 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-cloud-fill"></i>關聯詞文字雲</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <div id="cloud"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 2 連結 + 段落摘要 ── -->
+<div class="row g-3 mb-3">
+  <!-- 連結 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-link-45deg"></i>相關連結</span>
+      </div>
+      <div class="card-body">
+        <div id="num_articles"></div>
+        <ul class="list-group list-group-flush" id="newslinks"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 段落摘要 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-card-text"></i>關鍵字所在段落摘要</span>
+      </div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush" id="same_paragraph"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 3：關聯詞排行 + 空白提示 ── -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-diagram-2-fill"></i>同時出現的關聯詞</span>
+      </div>
+      <div class="card-body">
+        <ul id="related_words"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100" style="background:linear-gradient(135deg,#e1f5fe,#f0f2f8);border:none;">
+      <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-4">
+        <i class="bi bi-diagram-3" style="font-size:2.5rem;color:#0277bd;opacity:0.4;"></i>
+        <p class="mt-2 mb-0 text-muted small">
+          關聯詞分析幫助你了解<br>哪些話題、人物、事件與你的關鍵詞共同出現。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js"></script>
+<script src="https://cdn.rawgit.com/jasondavies/d3-cloud/v1.2.1/build/d3.layout.cloud.js"></script>
+<script>
+  call_ajax();
+
+  $("#btn_ok").on("click", function () { call_ajax(); });
+  $("input[name='cateradio']").on("change", function () { call_ajax(); });
+  $("input[name='wkradio']").on("change", function () { call_ajax(); });
+  $("input[name='condradio']").on("change", function () { call_ajax(); });
+
+  function call_ajax() {
+    const userkey = $("#input_keyword").val();
+    const weeks = $("input[name='wkradio']:checked").val();
+    const cate = $("input[name='cateradio']:checked").val();
+    const cond = $("input[name='condradio']:checked").val();
+
+    if (userkey.length < 2) {
+      alert("輸入關鍵字不可空白或小於兩個中文字!");
+      return 0;
+    }
+    $.ajax({
+      type: "POST",
+      url: "api_get_userkey_associate/",
+      data: { userkey: userkey, cate: cate, weeks: weeks, cond: cond },
+      success: function (received) {
+        const num_articles = received["num_articles"];
+        $("#num_articles").empty();
+        $("#num_articles").append(
+          `<div class="num-articles-badge"><i class="bi bi-newspaper"></i>找到 ${num_articles} 篇相關文章</div>`
+        );
+
+        const newslinks = received["newslinks"];
+        $("#newslinks").empty();
+        if (newslinks.length == 0) { alert("No result returned!"); }
+        for (let i = 0; i < newslinks.length; i++) {
+          const items =
+            '<li class="list-group-item py-2 border-bottom">' +
+            '<div class="d-flex align-items-center">' +
+            '<span class="badge bg-secondary me-2 px-2 py-1">' + newslinks[i].category + '</span>' +
+            '<a href="' + newslinks[i].link + '" class="text-decoration-none" target="_blank">' +
+            newslinks[i].title + '</a>' +
+            '</div></li>';
+          $("#newslinks").append(items);
+        }
+
+        const related_words = received["related_words"];
+        $("#related_words").empty();
+        for (let i = 0; i < related_words.length; i++) {
+          const items = "<li>" + related_words[i] + "</li>";
+          $("#related_words").append(items);
+        }
+
+        const same_paragraph = received["same_paragraph"];
+        $("#same_paragraph").empty();
+        for (let i = 0; i < same_paragraph.length; i++) {
+          const msg = "<li class='list-group-item py-2 border-bottom'>" + same_paragraph[i] + "</li>";
+          $("#same_paragraph").append(msg);
+        }
+
+        topWordToDraw = received.clouddata;
+        $("#cloud").empty();
+        drawCloud(topWordToDraw, "#cloud");
+      },
+      error: function (msg, status) { console.log(msg); console.log(status); }
+    });
+  }
+
+  function drawCloud(topWordToDraw, element_id) {
+    const width = 480;
+    const height = 320;
+    d3.layout.cloud()
+      .size([width, height])
+      .words(topWordToDraw)
+      .rotate(function () { return 0; })
+      .font("Impact")
+      .fontSize(function (d) { return d.size; })
+      .on("end", draw)
+      .start();
+
+    function draw(words) {
+      const fill = d3.scale.category20();
+      d3.select(element_id).append("svg")
+        .attr("width", width).attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + ~~(width / 2) + "," + ~~(height / 2) + ")")
+        .selectAll("text").data(words).enter().append("text")
+        .style("font-size", function (d) { return d.size + "px"; })
+        .style("user-select", "none")
+        .style("cursor", "default")
+        .style("font-family", "Impact")
+        .style("fill", function (d, i) { return fill(i); })
+        .attr("text-anchor", "middle")
+        .attr("transform", function (d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+        .text(function (d) { return d.text; });
+    }
+  }
+</script>
+{% endblock %}

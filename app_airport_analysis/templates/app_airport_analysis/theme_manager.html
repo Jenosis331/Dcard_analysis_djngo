@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}主題輿情管理與 AI 分類{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #4c1d95 100%);
+    border-radius: var(--radius-card);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1.2rem;
+    box-shadow: 0 10px 25px rgba(49, 16, 66, 0.15);
+  }
+  .hero-icon {
+    width: 54px; height: 54px; flex-shrink: 0;
+    background: rgba(255,255,255,0.18); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: #fff;
+  }
+  .page-hero h1 { font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.75); margin: 0.2rem 0 0; font-size: 0.82rem; }
+  
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: var(--brand-color); font-size: 0.95rem; }
+  
+  .theme-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+  }
+  .theme-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  .theme-card.active-theme {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(236, 72, 153, 0.04) 100%);
+  }
+  
+  .status-badge {
+    font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 2rem;
+  }
+  .status-imported { background-color: #d1fae5; color: #065f46; font-weight: 600; }
+  .status-pending { background-color: #fef3c7; color: #92400e; font-weight: 600; }
+  
+  .btn-purple {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    border: none; color: white;
+    box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+    transition: all 0.2s ease;
+  }
+  .btn-purple:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(124, 58, 237, 0.35);
+    color: white;
+  }
+  
+  /* Progress Section styling */
+  .progress-container {
+    background-color: var(--bg-card-header);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: none;
+    margin-top: 1.5rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .progress-title {
+    font-weight: 700; color: var(--text-primary);
+    margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .progress-status-msg {
+    font-size: 0.8rem; color: var(--text-secondary);
+    margin-top: 0.4rem; font-family: monospace;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-sliders"></i></div>
+  <div>
+    <h1>主題輿情管理與 AI 分類</h1>
+    <p>導入 data/by_keyword 原始檔案，由 AI 自動劃分情境類別，多主題一鍵無縫切換</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- 左側：主題列表與切換 -->
+  <div class="col-lg-6">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <span class="card-hdr"><i class="bi bi-list-stars"></i>已導入主題清單</span>
+      </div>
+      <div class="card-body bg-light bg-opacity-25">
+        <p class="text-secondary small mb-3">
+          請選擇要在平台中分析的主題。切換後，情境聲量總覽、月度趨勢、關鍵字深挖、留言情緒分析及新聞連結搜尋等頁面將同步更新為該主題資料。
+        </p>
+        
+        <div class="d-flex flex-column gap-2">
+          {% for t in themes %}
+            {% if t.status == 'imported' %}
+            <div class="card theme-card p-3 {% if t.name == active_theme %}active-theme{% endif %} cursor-pointer" onclick="setActiveTheme('{{ t.name }}')">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="m-0 fw-bold d-flex align-items-center gap-2">
+                    {% if t.name == '機場' %}
+                    <i class="bi bi-airplane-fill text-info"></i>
+                    {% else %}
+                    <i class="bi bi-tag-fill text-purple"></i>
+                    {% endif %}
+                    {{ t.name }}
+                  </h5>
+                  <span class="text-muted small">
+                    {% if t.name == '機場' %}
+                    預設機場輿情分析資料集
+                    {% else %}
+                    自訂主題資料集
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="status-badge status-imported"><i class="bi bi-check-circle-fill me-1"></i>已導入</span>
+                  {% if t.name == active_theme %}
+                  <span class="badge bg-purple px-2 py-1"><i class="bi bi-eye-fill me-1"></i>觀察中</span>
+                  {% else %}
+                  <button class="btn btn-sm btn-outline-secondary py-1 px-3">切換</button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 右側：資料導入與分類 -->
+  <div class="col-lg-6">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <span class="card-hdr"><i class="bi bi-database-add"></i>動態 AI 分類與導入</span>
+      </div>
+      <div class="card-body bg-light bg-opacity-25">
+        <p class="text-secondary small mb-3">
+          系統會掃描 <code>data/by_keyword/dcard_data1/</code> 資料夾中的原始 Dcard 搜尋檔案。若發現未導入的主題，您可以透過 AI 大型語言模型為其劃分適當的主題分類，並執行批次的情緒分析。
+        </p>
+        
+        <div class="d-flex flex-column gap-3">
+          {% for t in themes %}
+            {% if t.status == 'not_imported' %}
+            <div class="border rounded bg-white p-3 shadow-sm">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                  <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-bar-graph"></i>待導入主題：{{ t.name }}
+                  </h6>
+                  <span class="text-muted small">來源檔案：<code>dcard_{{ t.name }}_*.csv</code></span>
+                </div>
+                <span class="status-badge status-pending"><i class="bi bi-exclamation-circle-fill me-1"></i>未導入</span>
+              </div>
+              
+              <!-- 導入設定 -->
+              <div class="bg-light p-3 rounded mb-3 border">
+                <div class="row align-items-center">
+                  <div class="col-sm-7">
+                    <label class="form-label mb-1 fw-bold text-dark">設定分類數 ($n$ 類，包含其他)</label>
+                    <div class="form-text mt-0 mb-2">指定 AI 對此主題進行分類時的子分類數量限制。</div>
+                  </div>
+                  <div class="col-sm-5">
+                    <select class="form-select num-classes-select" id="classes_{{ t.name }}">
+                      <option value="4">4 類</option>
+                      <option value="5">5 類</option>
+                      <option value="6" selected>6 類 (建議)</option>
+                      <option value="7">7 類</option>
+                      <option value="8">8 類</option>
+                      <option value="9">9 類</option>
+                      <option value="10">10 類</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn btn-purple w-100 fw-bold py-2" onclick="startImport('{{ t.name }}')">
+                <i class="bi bi-robot me-1"></i>動態 AI 分類與導入
+              </button>
+            </div>
+            {% endif %}
+          {% empty %}
+            <div class="text-center py-4 text-muted border rounded bg-white">
+              <i class="bi bi-folder-x display-6 mb-2 d-block"></i>
+              沒有發現待導入的新增主題原始檔案。
+            </div>
+          {% endfor %}
+        </div>
+        
+        <!-- Progress section -->
+        <div class="progress-container" id="import-progress-card">
+          <div class="progress-title" id="progress-title-text">
+            <span class="spinner-border spinner-border-sm text-purple" role="status" aria-hidden="true"></span>
+            正在分類主題資料中...
+          </div>
+          <div class="progress mb-2" style="height: 1.25rem;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-purple" 
+                 role="progressbar" style="width: 0%" id="import-progress-bar">0%</div>
+          </div>
+          <div class="progress-status-msg" id="import-status-message">準備中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setActiveTheme(theme) {
+    window.location.href = "{% url 'app_airport_analysis:set_theme' %}?theme=" + encodeURIComponent(theme);
+  }
+
+  let pollingInterval = null;
+
+  function startImport(theme) {
+    const numClasses = document.getElementById("classes_" + theme).value;
+    
+    // Disable all import buttons to prevent multiple runs
+    $('.btn-purple').prop('disabled', true);
+    
+    // Show progress card
+    const $container = $('#import-progress-card');
+    $container.show();
+    $('#import-progress-bar').css('width', '0%').text('0%').removeClass('bg-success bg-danger').addClass('bg-purple');
+    $('#import-status-message').text('正在啟動 AI 工作，這可能需要幾分鐘時間...');
+    
+    // Trigger import call
+    $.ajax({
+      url: "{% url 'app_airport_analysis:api_theme_import' %}",
+      type: "POST",
+      data: {
+        theme: theme,
+        num_classes: numClasses
+      },
+      success: function(response) {
+        // Start polling progress
+        pollProgress(theme);
+      },
+      error: function(xhr) {
+        $('.btn-purple').prop('disabled', false);
+        const errMsg = xhr.responseJSON ? xhr.responseJSON.error : '啟動失敗，請重試。';
+        $('#import-progress-bar').removeClass('bg-purple').addClass('bg-danger').css('width', '100%').text('錯誤');
+        $('#import-status-message').text('錯誤: ' + errMsg);
+      }
+    });
+  }
+
+  function pollProgress(theme) {
+    if (pollingInterval) clearInterval(pollingInterval);
+    
+    pollingInterval = setInterval(function() {
+      $.ajax({
+        url: "{% url 'app_airport_analysis:api_theme_progress' %}?theme=" + encodeURIComponent(theme),
+        type: "GET",
+        success: function(data) {
+          const progress = data.progress;
+          const status = data.status;
+          const msg = data.message;
+          
+          $('#import-progress-bar').css('width', progress + '%').text(progress + '%');
+          $('#import-status-message').text(msg);
+          
+          if (status === 'success') {
+            clearInterval(pollingInterval);
+            $('#import-progress-bar').removeClass('bg-purple').addClass('bg-success');
+            $('#progress-title-text').html('<i class="bi bi-check-circle-fill text-success"></i> 導入完成！');
+            $('#import-status-message').text('主題「' + theme + '」導入並分類成功！網頁將在 2 秒後自動整理...');
+            setTimeout(function() {
+              window.location.reload();
+            }, 2500);
+          } else if (status === 'error') {
+            clearInterval(pollingInterval);
+            $('.btn-purple').prop('disabled', false);
+            $('#import-progress-bar').removeClass('bg-purple').addClass('bg-danger').css('width', '100%').text('失敗');
+            $('#progress-title-text').html('<i class="bi bi-exclamation-triangle-fill text-danger"></i> 導入失敗');
+            $('#import-status-message').text(msg);
+          }
+        },
+        error: function() {
+          clearInterval(pollingInterval);
+          $('.btn-purple').prop('disabled', false);
+          $('#import-status-message').text('連線異常，無法更新進度。');
+        }
+      });
+    }, 1500);
+  }
+</script>
+{% endblock %}

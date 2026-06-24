@@ -1,0 +1,555 @@
+{% extends 'base.html' %}
+
+{% block title %}使用者關鍵詞查詢{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 60%, #7b1fa2 100%);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: #6a1b9a; font-size: 1rem; }
+
+  #keyword_article_count,
+  #keyword_frequency {
+    list-style: none; padding: 0; margin: 0;
+    counter-reset: kw-counter;
+  }
+  #keyword_article_count li,
+  #keyword_frequency li {
+    counter-increment: kw-counter;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+  }
+  #keyword_article_count li:last-child,
+  #keyword_frequency li:last-child { border-bottom: none; }
+  #keyword_article_count li::before,
+  #keyword_frequency li::before {
+    content: counter(kw-counter);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem;
+    background: #6a1b9a; color: #fff;
+    border-radius: 50%; font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-search-heart-fill"></i></div>
+  <div>
+    <h1>分析你關心的關鍵詞:讓AI幫你自動產生分析報告</h1>
+    <p>輸入任意關鍵詞，即時追蹤其近期熱門度與聲量變化趨勢</p>
+  </div>
+</div>
+
+<!-- ── Row 1：查詢條件 + 時間折線圖 ── -->
+<div class="row g-3 mb-3">
+  <!-- 輸入條件 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-sliders"></i>查詢條件</span>
+      </div>
+      <div class="card-body">
+        <div class="mb-3 row">
+          <label class="col-md-3 col-form-label">關鍵詞</label>
+          <div class="col-md-9">
+            <input id="input_keyword" name="userkey" value="薪水 台積電" class="form-control" />
+            <div class="form-text">可輸入多個，空白隔開（斷詞搜尋，非全文搜尋）</div>
+          </div>
+        </div>
+
+        <div class="mb-3 row">
+          <label class="col-sm-3 col-form-label">邏輯條件</label>
+          <div class="col-md-9">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" id="cond_and" value="and" name="condradio" />
+              <label class="form-check-label" for="cond_and">AND（同時出現）</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" id="cond_or" value="or" name="condradio" checked />
+              <label class="form-check-label" for="cond_or">OR（任一出現）</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3 row">
+          <label class="col-sm-3 col-form-label">類別</label>
+          <div class="col-md-9">
+            {% for cate in categories %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" id="cateradio{{ forloop.counter }}" value="{{ cate }}" name="cateradio" {% if forloop.first %}checked{% endif %} />
+              <label class="form-check-label" for="cateradio{{ forloop.counter }}">{{ cate }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mb-3 row">
+          <label class="col-md-3 col-form-label">時間範圍（週）</label>
+          <div class="col-md-9">
+            <div class="d-flex gap-1 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="wk1" value="1" name="wkradio" />
+                <label class="form-check-label" for="wk1">1週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="wk2" value="2" name="wkradio" checked />
+                <label class="form-check-label" for="wk2">2週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="wk3" value="3" name="wkradio" />
+                <label class="form-check-label" for="wk3">3週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="wk4" value="4" name="wkradio" />
+                <label class="form-check-label" for="wk4">4週</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="wk6" value="6" name="wkradio" />
+                <label class="form-check-label" for="wk6">6週</label>
+              </div>
+            </div>
+            <div class="form-text">以最新資料時間為基準往前推算</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-9 ms-auto">
+            <button type="button" id="btn_ok" class="btn btn-primary w-100">
+              <i class="bi bi-search me-1"></i>AI生成報告
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI 報告區塊 -->
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">AI聲量分析報告</h4>
+      </div>
+      <div class="card-body markdown-body">
+        <div id="chat_container" class="overflow-auto" style="height: 60vh; max-height: 500px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 區塊3 -->
+<div class="row g-3 mb-3">
+  <div class="col-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="h6 text-uppercase mb-0">出現頻率以時間呈現</h3>
+      </div>
+      <div class="card-body">
+        <small>觀察每個時間點有多少篇報導，也就是聲量大小。</small>
+        <canvas id="keyword_time_line_chart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="h6 text-uppercase mb-0">熱門程度：有幾篇新聞報導提到它？</h3>
+      </div>
+      <div class="card-body">
+        <ul id="keyword_article_count"></ul>
+      </div>
+    </div>
+  </div>
+</div> 
+
+<!-- 區塊4 -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="h6 text-uppercase mb-0">情緒分析：文章層級</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="article_senti_pie_chart"></canvas>
+        <ul id="senti_info" class="list-unstyled d-flex flex-wrap justify-content-center gap-3 mt-4"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="h6 text-uppercase mb-0">正反面情緒變化</h3>
+      </div>
+      <div class="card-body">
+        <small>每個時間點的正反面報導篇數。</small>
+        <canvas id="sentiment_time_line_chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- chartjs圖js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+  <!-- 程式碼區 -->
+  <script>
+    //**按鈕事件
+    $('#btn_ok').on('click', function () {
+      call_ajax() //先呼叫資料分析的API，取得分析資料並畫圖
+      call_llm_report_generation_ajax()  //再呼叫AI報告產生的API，取得AI分析報告內容並顯示
+    }) //event function
+    
+    //呼叫API取得分析資料，並畫圖
+    function call_ajax() {
+      const userkey = $('#input_keyword').val()
+      const weeks = $("input[name='wkradio']:checked").val()
+      const cate = $("input[name='cateradio']:checked").val()
+      const cond = $("input[name='condradio']:checked").val()
+    
+      if (userkey.length < 2) {
+        alert('輸入關鍵字不可空白或小於兩個中文字!')
+        return 0
+      }
+    
+    
+      $.ajax({
+        type: 'POST',
+        url: 'api_get_userkey_data/',
+        data: {
+          userkey: userkey,
+          cate: cate,
+          weeks: weeks,
+          cond: cond
+        }, // pass to server
+        success: function (received) {
+          //若查無資料，顯示提醒訊息
+          if (received['error']) {
+            alert('檢索異常回應: ' + received['error'])
+            return 0
+          } 
+          const article_count = received['key_occurrence_cat']
+          $('#keyword_article_count').empty()
+          //使用表格顯示，並設定交替行底色
+          let tableHTML = `<table class="table table-striped"><thead><tr><th>關鍵詞</th><th>文章數量</th></tr></thead><tbody>`
+          let index = 0
+          for (let key in article_count) {
+            tableHTML += `<tr><td>${key}</td><td>${article_count[key]}</td></tr>`
+            index++
+          }
+          tableHTML += `</tbody></table>`
+          $('#keyword_article_count').append(tableHTML)
+
+          // 畫時間圖表
+          const data_key_time_freq = received['key_time_freq']
+          showtimechart(data_key_time_freq)
+
+          // draw pie chart
+          const data_pie = received['sentiCount']
+          drawPieChart(data_pie)
+    
+          $('#senti_info').empty()
+          for (let k in data_pie) {
+            $('#senti_info').append(`<li class="badge bg-warning text-dark">${k}: ${data_pie[k]}篇</li>`)
+          }
+    
+          // draw time-based line chart
+          const data_pos = received['data_pos']
+          const data_neg = received['data_neg']
+    
+          drawLineChart(data_pos, data_neg)
+
+        } //function
+      }) //ajax
+    } //call_ajax()
+
+    //呼叫API取得AI分析報告內容，並顯示在畫面上
+    function call_llm_report_generation_ajax() {
+      const userkey = $('#input_keyword').val()
+      const weeks = $("input[name='wkradio']:checked").val()
+      const cate = $("input[name='cateradio']:checked").val()
+      const cond = $("input[name='condradio']:checked").val()
+    
+      if (userkey.length < 2) {
+        alert('輸入關鍵字不可空白或小於兩個中文字!')
+        return 0
+      }
+    
+      // 清空聊天容器
+      $('#chat_container').empty()
+    
+      // 添加"正在輸入"指示符
+      let typingIndicator = addTypingIndicator()
+    
+      $.ajax({
+        type: 'POST',
+        url: 'api_get_userkey_llm_report/',
+        data: {
+          userkey: userkey,
+          cate: cate,
+          weeks: weeks,
+          cond: cond
+        }, // pass to server
+        success: function (received) {
+          // 移除"正在輸入"指示符
+          typingIndicator.remove()
+    
+          //若查無資料，顯示提醒訊息
+          if (received['error']) {
+            alert('檢索異常回應: ' + received['error'])
+            return 0
+          }
+    
+          // 顯示AI報告
+          if (received['report']) {
+            report = received['report']
+            //report = marked.parse(report)
+            // 使用marked.js將markdown轉為HTML，並顯示在畫面上
+            displayReport(report)
+          }
+    
+        } //function
+      }) //ajax
+    } //call_ajax()
+    
+    function displayReport(report) {
+      // 使用 marked.js 將 markdown 轉為 HTML
+      const renderedHTML = marked.parse(report)
+      const reportHTML = `
+            <div class="d-flex justify-content-start mb-3">
+              <div class="card bg-light" style="max-width: 90%;">
+                <div class="card-body py-2 px-3">
+                  <div class="report-content">${renderedHTML}</div>
+                </div>
+              </div>
+            </div>
+          `
+      $('#chat_container').append(reportHTML)
+      scrollToBottom()
+    }
+    
+    // 添加"正在輸入"指示符
+    function addTypingIndicator() {
+      const indicatorHTML = `
+                <div class="typing-indicator d-flex justify-content-start mb-3">
+                  <div class="card bg-light" style="max-width: 75%;">
+                    <div class="card-body py-2 px-3">
+                      <div class="d-flex align-items-center">
+                        <span class="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>AI 正在思考，請耐心等候...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `
+    
+      $('#chat_container').append(indicatorHTML)
+      scrollToBottom()
+    
+      return $('.typing-indicator')
+    }
+    
+    // 滾動到底部
+    function scrollToBottom() {
+      const chatContainer = document.getElementById('chat_container')
+      chatContainer.scrollTop = chatContainer.scrollHeight
+    }
+   
+ 
+    // 宣告全域變數用於存放圖表實例
+    let line_chart = null
+    
+    function showtimechart(data_key_time_freq) {
+      //取得繪圖元件
+      const ctx_key_time = document.getElementById('keyword_time_line_chart').getContext('2d')
+    
+      const myoptions = {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: 's2',
+              borderColor: 'red',
+              data: data_key_time_freq // your data here!
+            }
+          ]
+        },
+        options: {
+          legend: {
+            display: false
+          },
+          scales: {
+            xAxes: [
+              {
+                type: 'time',
+                time: {
+                  unit: 'day',
+                  displayFormats: {
+                    //day: 'DD-MM-YYYY'
+                    day: 'MM/DD'
+                  }
+                }
+              }
+            ],
+            yAxes: [
+              {
+                ticks: {
+                  beginAtZero: true
+                },
+                display: true,
+                scaleLabel: {
+                  display: true,
+                  labelString: '出現次數'
+                }
+              }
+            ]
+          }
+        }
+      }
+    
+      // 檢查並清除舊圖
+      if (line_chart) {
+        line_chart.destroy()
+      }
+    
+      // 畫新圖
+      line_chart = new Chart(ctx_key_time, myoptions)
+    }
+
+
+
+    
+    let sentiment_bar_chart = null;
+    // PieChart function寫法
+    function drawPieChart(chartdata) {
+      // pie chart
+      let piechartElem = document.getElementById('article_senti_pie_chart').getContext('2d')
+      let chartSpec = {
+        type: 'pie',
+        data: {
+          labels: ['正面', '負面', '中立'],
+          datasets: [
+            {
+              data: [chartdata.Positive, chartdata.Negative, chartdata.Neutral],
+              backgroundColor: ['rgba(0,0,255,0.3)', 'rgba(255,0,0,0.3)', 'rgba(150,150,150,0.3)']
+            }
+          ]
+        },
+        options: {}
+      }
+
+      // 檢查並清除舊圖
+      if (sentiment_bar_chart) {
+        sentiment_bar_chart.destroy()
+      }
+
+      // 畫新圖
+      sentiment_bar_chart = new Chart(piechartElem, chartSpec)
+    }
+    
+    let sentiment_line_chart = null;
+    // Line chart function
+    function drawLineChart(data_pos, data_neg) {
+
+      let linechartElem = document.getElementById('sentiment_time_line_chart').getContext('2d')
+      // for positive sentiment line chart
+      let dataPos = {
+        label: '正面',
+        data: data_pos,
+        borderColor: 'rgba(0,0,255,0.3)', //"blue", //藍色表示正面
+        backgroundColor: 'rgba(0,0,255,0.2)', //背景顏色
+        borderWidth: 1,
+        fill: true
+      }
+      // for negative sentiment line chart
+      let dataNeg = {
+        label: '負面',
+        data: data_neg,
+        borderColor: 'rgba(255,0,0,0.3)', //"red", //紅色表示負面
+        backgroundColor: 'rgba(255,0,0,0.2)', //背景顏色
+        borderWidth: 1,
+        fill: true
+      }
+    
+      let options_detail = {
+        legend: {
+          display: true
+        },
+        scales: {
+          xAxes: [
+            {
+              type: 'time',
+              time: {
+                unit: 'day',
+                displayFormats: {
+                  //day: 'DD-MM-YYYY'
+                  day: 'MM/DD'
+                }
+              }
+            }
+          ],
+          yAxes: [
+            {
+              ticks: {
+                beginAtZero: true
+              },
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: '篇數'
+              }
+            }
+          ]
+        }
+      }
+    
+      let chart_spec = {
+        type: 'line',
+        data: {
+          datasets: [dataPos, dataNeg] //有兩條線，兩組資料使用陣列存放即可
+        },
+        options: options_detail
+      }
+    
+      // now draw the sentiment line chart
+      if (sentiment_line_chart) {
+        sentiment_line_chart.destroy()
+      }
+
+      sentiment_line_chart = new Chart(linechartElem, chart_spec)
+    }
+
+
+  </script>
+{% endblock %}

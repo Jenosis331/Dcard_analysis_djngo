@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ active_theme }}新聞連結搜尋{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: var(--brand-gradient);
+    border-radius: var(--radius-card);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1.2rem;
+  }
+  .hero-icon {
+    width: 54px; height: 54px; flex-shrink: 0;
+    background: rgba(255,255,255,0.18); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: #fff;
+  }
+  .page-hero h1 { font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.75); margin: 0.2rem 0 0; font-size: 0.82rem; }
+  .hero-badge {
+    margin-left: auto; background: rgba(255,255,255,0.14);
+    color: #fff; border-radius: 2rem; padding: 0.28rem 0.85rem;
+    font-size: 0.73rem; white-space: nowrap;
+  }
+
+  /* ── 搜尋面板 ── */
+  .search-tabs .nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-size: 0.9rem;
+  }
+  .search-tabs .nav-link.active {
+    color: var(--brand-color);
+    font-weight: 700;
+    background: #fff;
+    border-bottom-color: #fff;
+  }
+
+  .logic-btn { font-size: 0.8rem; padding: 0.25rem 0.75rem; }
+  .logic-btn.active {
+    background: var(--brand-color);
+    border-color: var(--brand-color);
+    color: #fff;
+  }
+
+  .scenario-badge {
+    cursor: pointer; font-size: 0.78rem;
+    padding: 0.22rem 0.65rem; border-radius: 2rem;
+    border: 1.5px solid var(--border-color);
+    background: #fff; color: var(--text-secondary);
+    transition: all 0.15s; display: inline-block; margin: 2px 3px;
+  }
+  .scenario-badge:hover { border-color: var(--brand-color); color: var(--brand-color); }
+  .scenario-badge.active {
+    background: var(--brand-color); color: #fff;
+    border-color: var(--brand-color);
+  }
+
+  /* ── 結果區 ── */
+  #result-stats {
+    font-size: 0.82rem; color: var(--text-secondary);
+    padding: 0.4rem 0; margin-bottom: 0.6rem;
+  }
+
+  .result-table th {
+    font-size: 0.76rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-secondary);
+    background: var(--bg-card-header); border-bottom: 2px solid var(--border-color);
+  }
+  .result-table td { font-size: 0.875rem; vertical-align: middle; }
+  .result-table tr:hover td { background: #f0f2f8; }
+
+  .scenario-tag {
+    display: inline-block; padding: 0.15rem 0.55rem;
+    border-radius: 2rem; font-size: 0.72rem; font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .link-btn {
+    font-size: 0.78rem; padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+  }
+
+  .summary-text {
+    font-size: 0.78rem; color: var(--text-muted);
+    margin-top: 0.2rem; line-height: 1.45;
+  }
+
+  #no-result, #loading-msg {
+    text-align: center; padding: 2.5rem 0;
+    color: var(--text-muted); font-size: 0.9rem;
+  }
+  #loading-msg i { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-search"></i></div>
+  <div>
+    <h1>{{ active_theme }}新聞連結搜尋</h1>
+    <p>依關鍵字（AND / OR）或文章 ID 查詢 Dcard {{ active_theme }}相關討論連結</p>
+  </div>
+  <div class="hero-badge d-none d-md-block">
+    <i class="bi bi-database-fill me-1"></i>資料來源：Dcard {{ active_theme }}相關討論
+  </div>
+</div>
+
+<!-- ── 搜尋面板 ── -->
+<div class="card mb-3">
+  <div class="card-header p-0 border-0">
+    <ul class="nav nav-tabs search-tabs px-3 pt-2" id="searchTabs">
+      <li class="nav-item">
+        <a class="nav-link active" id="tab-keyword" href="#" data-tab="keyword">
+          <i class="bi bi-search me-1"></i>關鍵字搜尋
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="tab-id" href="#" data-tab="id">
+          <i class="bi bi-hash me-1"></i>ID 搜尋
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card-body">
+
+    <!-- 關鍵字搜尋面板 -->
+    <div id="panel-keyword">
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <label class="form-label">關鍵字<span class="text-muted ms-1" style="font-weight:400;">(空格分隔多個關鍵字)</span></label>
+          <input type="text" id="kw-input" class="form-control"
+                 placeholder="例：台北 機場 捷運" autocomplete="off">
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label">邏輯運算</label>
+          
+          <div class="d-flex align-items-center gap-4 mt-1">
+            
+            <!-- AND -->
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="logic" id="logic-and" value="AND">
+              <label class="form-check-label" for="logic-and">
+                AND（同時出現）
+              </label>
+            </div>
+
+            <!-- OR -->
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="logic" id="logic-or" value="OR" checked>
+              <label class="form-check-label" for="logic-or">
+                OR（任一出現）
+              </label>
+            </div>
+
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label">情境分類篩選</label>
+          <select class="form-select" id="kw-scenario">
+            <option value="all">全部情境</option>
+            {% for s in scenario_list %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- 快速情境標籤 -->
+      <div class="mt-3">
+        <span class="form-label me-2">快速篩選：</span>
+        <span class="scenario-badge active" data-scenario="all">全部</span>
+        {% for s in scenario_list %}
+        <span class="scenario-badge" data-scenario="{{ s }}">{{ s }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="mt-3">
+        <button class="btn btn-primary px-4" id="btn-kw-search">
+          <i class="bi bi-search me-1"></i>搜尋
+        </button>
+        <button class="btn btn-outline-secondary ms-2" id="btn-kw-clear">清除</button>
+      </div>
+    </div>
+
+    <!-- ID 搜尋面板 -->
+    <div id="panel-id" style="display:none;">
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <label class="form-label">文章 ID</label>
+          <input type="text" id="id-input" class="form-control"
+                 placeholder="例：258540960" autocomplete="off">
+          <div class="form-text">輸入 Dcard 文章的數字 ID 直接定位連結</div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-primary px-4" id="btn-id-search">
+          <i class="bi bi-search me-1"></i>搜尋
+        </button>
+        <button class="btn btn-outline-secondary ms-2" id="btn-id-clear">清除</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── 結果區 ── -->
+<div class="card" id="result-card" style="display:none;">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <span><i class="bi bi-list-ul me-1" style="color:var(--brand-color);"></i>搜尋結果</span>
+    <span id="result-stats"></span>
+  </div>
+  <div class="card-body p-0">
+    <div id="loading-msg" style="display:none;">
+      <i class="bi bi-arrow-clockwise me-2"></i>搜尋中...
+    </div>
+    <div id="no-result" style="display:none;">
+      <i class="bi bi-inbox me-2"></i>找不到符合條件的結果
+    </div>
+    <div class="table-responsive">
+      <table class="table result-table mb-0">
+        <thead>
+          <tr>
+            <th style="width:7rem;">文章 ID</th>
+            <th style="width:6.5rem;">日期</th>
+            <th>標題 / 摘要</th>
+            <th style="width:8rem;">情境分類</th>
+            <th style="width:5.5rem;">討論板</th>
+            <th style="width:5rem;"></th>
+          </tr>
+        </thead>
+        <tbody id="result-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SCENARIO_COLORS = {
+  '旅遊規劃資訊':   '#3949ab',
+  '機場交通':       '#e53935',
+  '情緒與經驗':     '#43a047',
+  '機場設施服務':   '#fb8c00',
+  '工作求職':       '#8e24aa',
+  '出入境流程':     '#00acc1',
+  '治安與突發事件': '#6d4c41',
+  '航班異常':       '#f4511e',
+  '其他':           '#9aa3b4',
+  '未分類':         '#cfd8dc',
+};
+
+function scenarioColor(s) {
+  return SCENARIO_COLORS[s] || '#9aa3b4';
+}
+
+// ── Tab 切換 ──────────────────────────────────────────────
+let currentTab = 'keyword';
+document.querySelectorAll('.search-tabs .nav-link').forEach(function(el) {
+  el.addEventListener('click', function(e) {
+    e.preventDefault();
+    currentTab = this.dataset.tab;
+    document.querySelectorAll('.search-tabs .nav-link').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('panel-keyword').style.display = currentTab === 'keyword' ? '' : 'none';
+    document.getElementById('panel-id').style.display      = currentTab === 'id'      ? '' : 'none';
+    hideResults();
+  });
+});
+
+// ── Logic 按鈕 ────────────────────────────────────────────
+let currentLogic = 'AND';
+document.querySelectorAll('.logic-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    currentLogic = this.dataset.logic;
+    document.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── 情境快速標籤 ──────────────────────────────────────────
+let currentScenario = 'all';
+document.querySelectorAll('.scenario-badge').forEach(function(badge) {
+  badge.addEventListener('click', function() {
+    currentScenario = this.dataset.scenario;
+    document.querySelectorAll('.scenario-badge').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('kw-scenario').value = currentScenario;
+  });
+});
+
+// 下拉選單同步快速標籤
+document.getElementById('kw-scenario').addEventListener('change', function() {
+  currentScenario = this.value;
+  document.querySelectorAll('.scenario-badge').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.scenario === currentScenario);
+  });
+});
+
+// ── 搜尋觸發 ─────────────────────────────────────────────
+document.getElementById('btn-kw-search').addEventListener('click', doKeywordSearch);
+document.getElementById('btn-id-search').addEventListener('click', doIdSearch);
+document.getElementById('btn-kw-clear').addEventListener('click', function() {
+  document.getElementById('kw-input').value = '';
+  hideResults();
+});
+document.getElementById('btn-id-clear').addEventListener('click', function() {
+  document.getElementById('id-input').value = '';
+  hideResults();
+});
+
+// Enter 鍵觸發
+document.getElementById('kw-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doKeywordSearch();
+});
+document.getElementById('id-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doIdSearch();
+});
+
+function doKeywordSearch() {
+  var query = document.getElementById('kw-input').value.trim();
+  if (!query) { alert('請輸入關鍵字'); return; }
+  doSearch('keyword', query, currentLogic, currentScenario);
+}
+
+function doIdSearch() {
+  var query = document.getElementById('id-input').value.trim();
+  if (!query) { alert('請輸入文章 ID'); return; }
+  doSearch('id', query, 'AND', 'all');
+}
+
+// ── 核心搜尋函式 ──────────────────────────────────────────
+function doSearch(searchType, query, logic, scenario) {
+  showLoading();
+
+  var params = new URLSearchParams({
+    search_type: searchType,
+    query:       query,
+    logic:       logic,
+    scenario:    scenario,
+  });
+
+  fetch('{% url "app_airport_search:api_search" %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { showError(data.error); return; }
+    renderResults(data);
+  })
+  .catch(function() { showError('搜尋請求失敗，請稍後再試'); });
+}
+
+// ── 渲染結果 ──────────────────────────────────────────────
+function renderResults(data) {
+  var tbody = document.getElementById('result-tbody');
+  var stats = document.getElementById('result-stats');
+  var noResult = document.getElementById('no-result');
+  var loading  = document.getElementById('loading-msg');
+
+  loading.style.display  = 'none';
+  tbody.innerHTML = '';
+
+  document.getElementById('result-card').style.display = '';
+
+  if (!data.results || data.results.length === 0) {
+    noResult.style.display = 'block';
+    stats.textContent = '找不到符合結果';
+    return;
+  }
+
+  noResult.style.display = 'none';
+
+  // 結果統計說明
+  var logicLabel = data.logic === 'AND' ? 'AND（全符合）' : 'OR（任一符合）';
+  var scenarioLabel = (data.scenario === 'all') ? '全部情境' : data.scenario;
+  if (data.search_type === 'id') {
+    stats.textContent = '共找到 ' + data.total + ' 筆結果  ·  ID：' + data.query;
+  } else {
+    stats.textContent = '共找到 ' + data.total + ' 筆結果'
+      + '  ·  關鍵字：「' + data.query + '」  ·  ' + logicLabel
+      + '  ·  ' + scenarioLabel
+      + (data.total > 200 ? '  （僅顯示前 200 筆）' : '');
+  }
+
+  data.results.forEach(function(row) {
+    var color = scenarioColor(row.scenario);
+    var linkHtml = row.link
+      ? '<a href="' + escHtml(row.link) + '" target="_blank" rel="noopener" class="btn btn-outline-primary link-btn"><i class="bi bi-box-arrow-up-right me-1"></i>開啟</a>'
+      : '<span class="text-muted small">—</span>';
+
+    var summaryHtml = row.summary
+      ? '<div class="summary-text">' + escHtml(row.summary) + '</div>'
+      : '';
+
+    tbody.innerHTML += '<tr>'
+      + '<td><code class="text-muted" style="font-size:0.8rem;">' + escHtml(String(row.article_id)) + '</code></td>'
+      + '<td><span class="text-muted" style="font-size:0.8rem;">' + escHtml(row.date) + '</span></td>'
+      + '<td><div style="font-weight:500;">' + escHtml(row.title) + '</div>' + summaryHtml + '</td>'
+      + '<td><span class="scenario-tag" style="background:' + color + '1a;color:' + color + ';border:1px solid ' + color + '44;">' + escHtml(row.scenario) + '</span></td>'
+      + '<td><span class="text-muted" style="font-size:0.8rem;">' + escHtml(row.category) + '</span></td>'
+      + '<td>' + linkHtml + '</td>'
+      + '</tr>';
+  });
+}
+
+// ── 輔助函式 ──────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('result-card').style.display  = '';
+  document.getElementById('loading-msg').style.display  = '';
+  document.getElementById('no-result').style.display    = 'none';
+  document.getElementById('result-tbody').innerHTML     = '';
+  document.getElementById('result-stats').textContent   = '';
+}
+
+function hideResults() {
+  document.getElementById('result-card').style.display = 'none';
+}
+
+function showError(msg) {
+  document.getElementById('loading-msg').style.display = 'none';
+  document.getElementById('no-result').style.display   = '';
+  document.getElementById('no-result').innerHTML =
+    '<i class="bi bi-exclamation-circle me-2 text-danger"></i>' + escHtml(msg);
+  document.getElementById('result-stats').textContent = '';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+{% endblock %}

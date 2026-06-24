@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}輿情分析平台 - 熱門關鍵詞分析{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    background: var(--brand-gradient);
+    border-radius: var(--radius-card);
+    padding: 1.4rem 1.75rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .page-hero .hero-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff; flex-shrink: 0;
+  }
+  .page-hero h1 { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-hero p  { color: rgba(255,255,255,0.78); margin: 0.2rem 0 0; font-size: 0.83rem; }
+
+  .card-hdr {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .card-hdr i { color: var(--brand-color); font-size: 1rem; }
+
+  /* 編號列表 */
+  #topkeys {
+    list-style: none;
+    padding: 0; margin: 0;
+    counter-reset: keyword-counter;
+  }
+  #topkeys li {
+    counter-increment: keyword-counter;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+  }
+  #topkeys li:last-child { border-bottom: none; }
+  #topkeys li::before {
+    content: counter(keyword-counter);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem;
+    background: var(--brand-color); color: #fff;
+    border-radius: 50%; font-size: 0.68rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .tip-card {
+    background: linear-gradient(135deg, #e8eaf6 0%, #f0f2f8 100%);
+    border: none;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 2rem;
+    min-height: 160px;
+  }
+  .tip-card i { font-size: 2.5rem; color: var(--brand-color); opacity: 0.45; }
+  .tip-card p { margin: 0.75rem 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Hero ── -->
+<div class="page-hero">
+  <div class="hero-icon"><i class="bi bi-tags-fill"></i></div>
+  <div>
+    <h1>各類別最熱門的關鍵詞</h1>
+    <p>依據新聞類別統計，了解近期最受關注的關鍵詞排行</p>
+  </div>
+</div>
+
+<!-- ── Row 1：查詢條件 + 圖表 ── -->
+<div class="row g-3 mb-3">
+  <!-- 查詢條件 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-sliders"></i>查詢條件
+          <span class="badge bg-light text-secondary fw-normal ms-1" style="font-size:0.7rem;text-transform:none;letter-spacing:0">資料週期：最近 4 週</span>
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="mb-3 row">
+          <label class="col-sm-3 form-label">類別</label>
+          <div class="col-md-9">
+            <select id="cate-selected" name="news_category" class="form-select">
+              {% for cate in categories %}
+              <option>{{ cate }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">請選擇文章類別</div>
+          </div>
+        </div>
+        <div class="mb-3 row">
+          <label class="col-md-3 form-label">熱門詞數量</label>
+          <div class="col-md-9">
+            <input id="topk-selected" name="topk" value="10" class="form-control" />
+            <div class="form-text">顯示前 N 個熱門詞，內定值為 10</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-9 ms-auto">
+            <button type="button" id="btn-ok" class="btn btn-primary w-100">
+              <i class="bi bi-search me-1"></i>查詢
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 圖表 -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-bar-chart-fill"></i>熱門關鍵字圖表</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="mychart" style="max-height:280px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Row 2：關鍵字排行 + 提示 ── -->
+<div class="row g-3">
+  <!-- 熱門關鍵字排行 -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-hdr"><i class="bi bi-list-ol"></i>熱門關鍵字排行</span>
+      </div>
+      <div class="card-body">
+        <ul id="topkeys"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 說明提示 -->
+  <div class="col-lg-6">
+    <div class="card tip-card">
+      <i class="bi bi-lightbulb-fill"></i>
+      <p>選擇類別並調整熱門詞數量後，<br>點擊「查詢」即可看到最新關鍵詞排行與圖表。</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script>
+  call_ajax()
+
+  $('#cate-selected').on('change', function () { call_ajax() })
+  $('#btn-ok').on('click', function () { call_ajax() })
+
+  function call_ajax() {
+    let cate = $('#cate-selected').val()
+    let topk = $('#topk-selected').val()
+    $.ajax({
+      type: 'POST',
+      url: 'http://127.0.0.1:8000/topword/api_get_cate_topword/',
+      data: { news_category: cate, topk: topk },
+      success: function (received) {
+        let chart_data = received.chart_data
+        let wf_pairs = received.wf_pairs
+        console.log(wf_pairs)
+        showTopKeys(wf_pairs)
+        showChart(chart_data)
+      }
+    })
+  }
+
+  function showTopKeys(items) {
+    $('#topkeys').empty()
+    for (let i = 0; i < items.length; i++) {
+      let item_li = '<li>' + items[i] + '</li>'
+      $('#topkeys').append(item_li)
+    }
+  }
+
+  function showChart(chart_data) {
+    let values = chart_data.values
+    let labels = chart_data.labels
+    let category = chart_data.category
+
+    let data = {
+      labels: labels,
+      datasets: [{
+        label: category,
+        data: values,
+        backgroundColor: randomColors(values.length),
+        borderColor: randomColors(values.length),
+        borderWidth: 1
+      }]
+    }
+    let options = {
+      scales: { yAxes: [{ ticks: { beginAtZero: true } }] }
+    }
+    let canvas_mychrat = document.getElementById('mychart')
+    if (window.barchart) { barchart.destroy() }
+    barchart = new Chart(canvas_mychrat, { type: 'bar', data: data, options: options })
+
+    function randomColors(num_colors) {
+      let colors = []
+      for (let i = 0; i < num_colors; i++) {
+        let r = Math.floor(Math.random() * 255)
+        let g = Math.floor(Math.random() * 255)
+        let b = Math.floor(Math.random() * 255)
+        colors.push(`rgba(${r},${g},${b},0.5)`)
+      }
+      return colors
+    }
+  }
+</script>
+{% endblock %}
